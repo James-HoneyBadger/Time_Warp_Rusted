@@ -1,0 +1,7 @@
+[package]
+name    = "tw_graphics"
+version = "7.0.0"
+edition = "2021"
+
+[dependencies]
+serde = { workspace = true }

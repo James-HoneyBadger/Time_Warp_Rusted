@@ -1,0 +1,10 @@
+[package]
+name    = "tw_core"
+version = "7.0.0"
+edition = "2021"
+
+[dependencies]
+tw_graphics  = { workspace = true }
+tw_languages = { workspace = true }
+serde        = { workspace = true }
+log          = { workspace = true }

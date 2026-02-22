@@ -1,0 +1,47 @@
+[workspace]
+members = [
+    ".",
+    "crates/tw_graphics",
+    "crates/tw_core",
+    "crates/tw_languages",
+    "crates/tw_ui",
+]
+resolver = "2"
+
+[workspace.dependencies]
+tw_graphics  = { path = "crates/tw_graphics" }
+tw_core      = { path = "crates/tw_core" }
+tw_languages = { path = "crates/tw_languages" }
+tw_ui        = { path = "crates/tw_ui" }
+
+eframe  = { version = "0.31", default-features = false, features = ["default_fonts", "glow", "x11", "wayland"] }
+egui    = "0.31"
+rfd     = { version = "0.17", features = [] }
+serde   = { version = "1", features = ["derive"] }
+serde_json = "1"
+log     = "0.4"
+env_logger = "0.11"
+
+[package]
+name    = "time-warp-studio"
+version = "7.0.0"
+edition = "2021"
+authors = ["Time Warp Studio Contributors"]
+description = "Educational multi-language programming environment — Rust edition"
+license = "MIT"
+
+[[bin]]
+name = "time-warp-studio"
+path = "src/main.rs"
+
+[dependencies]
+tw_ui        = { workspace = true }
+eframe       = { workspace = true }
+egui         = { workspace = true }
+env_logger   = { workspace = true }
+log          = { workspace = true }
+
+[profile.release]
+opt-level = 3
+lto       = "thin"
+codegen-units = 1

@@ -1,0 +1,13 @@
+; ========================================
+; Square - Time Warp Logo
+; Demonstrates: FORWARD, RIGHT
+; ========================================
+
+FORWARD 100
+RIGHT 90
+FORWARD 100
+RIGHT 90
+FORWARD 100
+RIGHT 90
+FORWARD 100
+RIGHT 90
