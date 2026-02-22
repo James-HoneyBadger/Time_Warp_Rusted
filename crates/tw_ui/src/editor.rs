@@ -464,12 +464,16 @@ impl CodeEditor {
                                    "DO","LOOP","GOTO","GOSUB","RETURN","END","REM","LET","DIM",
                                    "SUB","FUNCTION","SELECT","CASE","STEP","TO","AND","OR","NOT",
                                    "COLOR","LINE","CIRCLE","PSET","DRAW","SCREEN","CLS",
-                                   "FORWARD","BACKWARD","LEFT","RIGHT","WIDTH"],
+                                   "FORWARD","BACKWARD","LEFT","RIGHT","WIDTH",
+                                   "PINMODE","DIGITALWRITE","DIGITALREAD","PWMWRITE","ANALOGWRITE",
+                                   "SERVOWRITE","GPIORESET"],
             Language::Logo   => &["FORWARD","FD","BACK","BK","LEFT","LT","RIGHT","RT","PENUP","PU",
                                    "PENDOWN","PD","HOME","CLEARSCREEN","CS","REPEAT","IF","IFELSE",
                                    "MAKE","TO","END","PRINT","SHOW","SETXY","SETHEADING","ARC","DOT",
                                    "SETPENCOLOR","SETPC","SETBGCOLOR","SETPENWIDTH","LABEL",
-                                   "BEGINFILL","ENDFILL","FOREVER","STOP","HIDETURTLE","SHOWTURTLE"],
+                                   "BEGINFILL","ENDFILL","FOREVER","STOP","HIDETURTLE","SHOWTURTLE",
+                                   "PINMODE","DIGITALWRITE","SETPIN","DIGITALREAD","READPIN",
+                                   "PWMWRITE","GPIORESET"],
             Language::Pilot  => &["T","A","M","Y","N","C","J","U","E","R","D"],
             Language::C      => &["int","float","double","char","void","if","else","while","for",
                                    "return","break","continue","do","switch","case","default",
@@ -485,7 +489,8 @@ impl CodeEditor {
                                    "findall","member","append","length","sort","msort"],
             Language::Forth  => &["dup","drop","swap","over","rot","if","else","then","begin","again",
                                    "until","while","repeat","do","loop","variable","constant",
-                                   "emit","cr","words","bye"],
+                                   "emit","cr","words","bye",
+                                   "FD","BK","RT","LT","PU","PD","COLOR"],
         }
     }
 }

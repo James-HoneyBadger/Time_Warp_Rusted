@@ -32,12 +32,12 @@ impl Language {
     pub fn extension(&self) -> &'static str {
         match self {
             Language::Basic  => "bas",
-            Language::Pilot  => "pil",
+            Language::Pilot  => "pilot",
             Language::Logo   => "logo",
             Language::C      => "c",
             Language::Pascal => "pas",
-            Language::Prolog => "pro",
-            Language::Forth  => "fth",
+            Language::Prolog => "pl",
+            Language::Forth  => "f",
         }
     }
 
@@ -48,8 +48,8 @@ impl Language {
             "pil" | "pilot" => Some(Language::Pilot),
             "logo" | "lg"   => Some(Language::Logo),
             "c"  | "h" | "cpp" | "hpp" | "cc" | "cxx" => Some(Language::C),
-            "pas" | "pascal" | "pp" | "dpr" | "lpr" => Some(Language::Pascal),
-            "pl"  | "pro" | "prolog" | "p" => Some(Language::Prolog),
+            "pas" | "pascal" | "pp" | "dpr" | "lpr" | "p" => Some(Language::Pascal),
+            "pl"  | "pro" | "prolog" => Some(Language::Prolog),
             "fth" | "4th" | "fs" | "forth" | "f" => Some(Language::Forth),
             _ => None,
         }
