@@ -6,5 +6,6 @@ edition = "2021"
 [dependencies]
 tw_graphics  = { workspace = true }
 tw_languages = { workspace = true }
+tw_iot       = { workspace = true }
 serde        = { workspace = true }
 log          = { workspace = true }

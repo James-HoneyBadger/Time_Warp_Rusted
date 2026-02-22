@@ -3,6 +3,8 @@
 
 use crate::debugger::ExecutionTimeline;
 use crate::language::Language;
+use tw_iot::GpioManager;
+use tw_iot::board::Board;
 use tw_languages::{
     context::{ControlFlow, ExecContext},
     execute_basic, execute_c, execute_logo, execute_pascal, execute_pilot, execute_prolog,
@@ -29,10 +31,14 @@ pub struct Interpreter {
     pub batch_size: usize,
     /// Whether to record frames into the timeline.
     pub record:    bool,
+    /// GPIO / IoT manager for Raspberry Pi integration.
+    pub gpio:      GpioManager,
 }
 
 impl Interpreter {
     pub fn new(language: Language) -> Self {
+        let mut gpio = GpioManager::new(Board::Simulator);
+        let _ = gpio.connect();
         Self {
             ctx:        ExecContext::new(),
             language,
@@ -40,6 +46,7 @@ impl Interpreter {
             state:      RunState::Idle,
             batch_size: 200,
             record:     false,
+            gpio,
         }
     }
 
@@ -241,6 +248,7 @@ impl Interpreter {
             }
 
             let cf = self.dispatch(&line_text);
+            self.process_gpio_commands();
             steps += 1;
 
             match cf {
@@ -302,6 +310,89 @@ impl Interpreter {
                 let out = execute_forth_safe(&mut self.ctx, line);
                 if !out.is_empty() { self.ctx.emit(&out); }
                 ControlFlow::Continue
+            }
+        }
+    }
+
+    /// Scan output for GPIO: command prefixes and route them to the GpioManager.
+    fn process_gpio_commands(&mut self) {
+        use tw_iot::gpio::PinMode;
+
+        // Collect GPIO commands from output, remove them from visible output
+        let mut gpio_lines = Vec::new();
+        let mut clean_output = Vec::new();
+        for line in &self.ctx.output {
+            let mut remaining = String::new();
+            for part in line.split('\n') {
+                if part.starts_with("GPIO:") {
+                    gpio_lines.push(part.to_string());
+                } else if !part.is_empty() {
+                    if !remaining.is_empty() { remaining.push('\n'); }
+                    remaining.push_str(part);
+                }
+            }
+            if !remaining.is_empty() {
+                remaining.push('\n');
+                clean_output.push(remaining);
+            }
+        }
+
+        if gpio_lines.is_empty() { return; }
+
+        // Replace output with cleaned version (GPIO commands not visible to user)
+        self.ctx.output = clean_output;
+
+        for cmd in &gpio_lines {
+            let parts: Vec<&str> = cmd.split_whitespace().collect();
+            if parts.is_empty() { continue; }
+
+            match parts[0] {
+                "GPIO:PINMODE" if parts.len() >= 3 => {
+                    if let Ok(pin) = parts[1].parse::<u8>() {
+                        let mode = match parts[2] {
+                            "INPUT"  | "IN"  => PinMode::Input,
+                            "OUTPUT" | "OUT" => PinMode::Output,
+                            "PWM"            => PinMode::Pwm,
+                            "I2C"            => PinMode::I2c,
+                            "SPI"            => PinMode::Spi,
+                            _ => PinMode::Output,
+                        };
+                        if let Err(e) = self.gpio.pin_mode(pin, mode) {
+                            self.ctx.emit(&format!("⚠ GPIO error: {e}\n"));
+                        }
+                    }
+                }
+                "GPIO:WRITE" if parts.len() >= 3 => {
+                    if let (Ok(pin), Ok(val)) = (parts[1].parse::<u8>(), parts[2].parse::<u8>()) {
+                        if let Err(e) = self.gpio.digital_write(pin, val != 0) {
+                            self.ctx.emit(&format!("⚠ GPIO error: {e}\n"));
+                        }
+                    }
+                }
+                "GPIO:READ" if parts.len() >= 2 => {
+                    if let Ok(pin) = parts[1].parse::<u8>() {
+                        match self.gpio.digital_read(pin) {
+                            Ok(v) => {
+                                // Store result in variable PINVAL
+                                self.ctx.set_var("PINVAL", if v { 1.0 } else { 0.0 });
+                            }
+                            Err(e) => {
+                                self.ctx.emit(&format!("⚠ GPIO error: {e}\n"));
+                            }
+                        }
+                    }
+                }
+                "GPIO:PWM" if parts.len() >= 3 => {
+                    if let (Ok(pin), Ok(duty)) = (parts[1].parse::<u8>(), parts[2].parse::<f64>()) {
+                        if let Err(e) = self.gpio.pwm_write(pin, duty) {
+                            self.ctx.emit(&format!("⚠ GPIO error: {e}\n"));
+                        }
+                    }
+                }
+                "GPIO:RESET" => {
+                    self.gpio.reset();
+                }
+                _ => {}
             }
         }
     }

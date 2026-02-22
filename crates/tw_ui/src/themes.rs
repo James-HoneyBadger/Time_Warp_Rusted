@@ -58,6 +58,7 @@ impl Theme {
     pub fn error(&self)      -> Color32 { rgb(self.error) }
     pub fn success(&self)    -> Color32 { rgb(self.success) }
     pub fn warning(&self)    -> Color32 { rgb(self.warning) }
+    pub fn border_color(&self) -> Color32 { rgb(self.border) }
     pub fn panel_bg(&self)   -> Color32 { rgb(self.panel_bg) }
     pub fn button_bg(&self)  -> Color32 { rgb(self.button_bg) }
     pub fn button_fg(&self)  -> Color32 { rgb(self.button_fg) }

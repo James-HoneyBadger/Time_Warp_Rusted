@@ -6,7 +6,7 @@ use std::path::PathBuf;
 use eframe::{CreationContext, Frame};
 use egui::{
     Align, CentralPanel, Context, Key, Layout, Modifiers,
-    RichText, SidePanel, TopBottomPanel,
+    RichText, ScrollArea, SidePanel, TopBottomPanel,
 };
 use tw_core::{interpreter::{Interpreter, RunState}, language::Language};
 
@@ -29,6 +29,31 @@ enum CanvasSplit {
     CanvasOnly,
 }
 
+// ── Panel size configuration ──────────────────────────────────────────────────
+
+/// User-configurable panel sizes.
+struct PanelSizes {
+    left_panel_width:  f32,
+    canvas_width:      f32,
+    canvas_height:     f32,
+    output_height:     f32,
+    right_panel_width: f32,
+    input_height:      f32,
+}
+
+impl Default for PanelSizes {
+    fn default() -> Self {
+        Self {
+            left_panel_width:  240.0,
+            canvas_width:      400.0,
+            canvas_height:     300.0,
+            output_height:     250.0,
+            right_panel_width: 500.0,
+            input_height:      150.0,
+        }
+    }
+}
+
 // ── app state ─────────────────────────────────────────────────────────────────
 
 pub struct TimeWarpApp {
@@ -48,11 +73,20 @@ pub struct TimeWarpApp {
     // file management
     current_file:      Option<PathBuf>,
     unsaved:           bool,
-    // find bar
+    // find bar (legacy, now integrated in editor)
     find_open:         bool,
     find_query:        String,
     // breakpoint input
     bp_line_buf:       String,
+    // Panel sizes
+    panel_sizes:       PanelSizes,
+    // Layout preferences window
+    layout_prefs_open: bool,
+    // Input window as separate floating panel
+    input_window_open: bool,
+    input_docked:      bool,  // true = bottom bar, false = floating window
+    // IoT panel
+    iot_panel_open:    bool,
 }
 
 impl TimeWarpApp {
@@ -80,6 +114,11 @@ impl TimeWarpApp {
             find_open:    false,
             find_query:   String::new(),
             bp_line_buf:  String::new(),
+            panel_sizes:  PanelSizes::default(),
+            layout_prefs_open: false,
+            input_window_open: false,
+            input_docked: true,
+            iot_panel_open: false,
         }
     }
 
@@ -140,13 +179,32 @@ impl TimeWarpApp {
         if ctx.input_mut(|i| i.consume_key(Modifiers::CTRL | Modifiers::SHIFT, Key::S)) {
             self.action_save_as();
         }
-        // Ctrl+F — Find
-        if ctx.input_mut(|i| i.consume_key(Modifiers::CTRL, Key::F)) {
-            self.find_open = !self.find_open;
+        // Ctrl+Z — Undo
+        if ctx.input_mut(|i| i.consume_key(Modifiers::CTRL, Key::Z)) {
+            self.editor.undo();
         }
-        // Escape — close find bar
-        if self.find_open && ctx.input_mut(|i| i.consume_key(Modifiers::NONE, Key::Escape)) {
+        // Ctrl+Shift+Z — Redo
+        if ctx.input_mut(|i| i.consume_key(Modifiers::CTRL | Modifiers::SHIFT, Key::Z)) {
+            self.editor.redo();
+        }
+        // Ctrl+G — Goto Line
+        if ctx.input_mut(|i| i.consume_key(Modifiers::CTRL, Key::G)) {
+            self.editor.goto_open = !self.editor.goto_open;
+        }
+        // Ctrl+F — Find/Replace (now in editor)
+        if ctx.input_mut(|i| i.consume_key(Modifiers::CTRL, Key::F)) {
+            self.editor.find_replace_open = !self.editor.find_replace_open;
+            self.find_open = false; // close legacy find bar
+        }
+        // Ctrl+H — Find/Replace (alternate)
+        if ctx.input_mut(|i| i.consume_key(Modifiers::CTRL, Key::H)) {
+            self.editor.find_replace_open = true;
+        }
+        // Escape — close find bar / find-replace
+        if ctx.input_mut(|i| i.consume_key(Modifiers::NONE, Key::Escape)) {
             self.find_open = false;
+            self.editor.find_replace_open = false;
+            self.editor.goto_open = false;
         }
     }
 
@@ -166,15 +224,41 @@ impl TimeWarpApp {
         if let Some(path) = rfd::FileDialog::new()
             .add_filter(&format!("{} files", self.current_lang.friendly_name()), &[ext])
             .add_filter("All source files", &[
-                "bas", "basic",          // BASIC
-                "pil", "pilot",          // PILOT
-                "logo", "lg",            // Logo
-                "c", "h",               // C
-                "pas", "pascal", "pp",   // Pascal
-                "pro", "prolog", "pl",   // Prolog
-                "fth", "4th", "fs", "forth", "f", // Forth
+                // Time Warp native languages
+                "bas", "basic",                        // BASIC
+                "pil", "pilot",                        // PILOT
+                "logo", "lg",                          // Logo
+                "c", "h", "cpp", "hpp", "cc", "cxx",   // C / C++
+                "pas", "pascal", "pp", "dpr", "lpr",   // Pascal / Delphi
+                "pro", "prolog", "pl",                 // Prolog
+                "fth", "4th", "fs", "forth", "f",     // Forth
+                // Common programming languages
+                "py", "pyw",                           // Python
+                "rs",                                   // Rust
+                "js", "mjs", "cjs",                    // JavaScript
+                "ts", "tsx",                            // TypeScript
+                "java",                                 // Java
+                "rb",                                   // Ruby
+                "go",                                   // Go
+                "swift",                                // Swift
+                "kt", "kts",                            // Kotlin
+                "lua",                                  // Lua
+                "sh", "bash", "zsh",                    // Shell
+                "asm", "s", "S",                        // Assembly
+                "ino",                                  // Arduino
+                "json", "yaml", "yml", "toml", "xml",  // Config
+                "html", "css", "scss",                  // Web
+                "sql",                                  // SQL
+                "r", "R",                               // R
+                "lisp", "cl", "el",                     // Lisp / Emacs
+                "scm", "rkt",                           // Scheme / Racket
+                "hs",                                   // Haskell
+                "erl", "ex", "exs",                     // Erlang / Elixir
+                "ml", "mli",                            // OCaml
+                "v", "sv",                              // Verilog
+                "vhd", "vhdl",                          // VHDL
             ])
-            .add_filter("Text files", &["txt"])
+            .add_filter("Text files", &["txt", "md", "rst", "csv", "log"])
             .add_filter("All files", &["*"])
             .pick_file()
         {
@@ -314,7 +398,77 @@ impl TimeWarpApp {
         }
         self.output.set(text);
     }
+    // ── theme visuals ──────────────────────────────────────────────────
 
+    /// Apply the current theme to egui's global visuals so that every panel,
+    /// menu, toolbar, and widget picks up consistent colors automatically.
+    fn apply_theme_visuals(&self, ctx: &Context) {
+        let theme = self.themes.current();
+        let mut vis = ctx.style().visuals.clone();
+
+        // Dark/light mode detection based on background luminance
+        let bg = theme.background;
+        let lum = 0.299 * bg[0] as f32 + 0.587 * bg[1] as f32 + 0.114 * bg[2] as f32;
+        vis.dark_mode = lum < 128.0;
+
+        // Window / panel backgrounds
+        let bg_color = theme.bg();
+        let panel_bg = theme.panel_bg();
+        let fg_color = theme.fg();
+        let border_color = egui::Color32::from_rgb(theme.border[0], theme.border[1], theme.border[2]);
+        let accent = theme.accent();
+
+        vis.override_text_color = Some(fg_color);
+        vis.panel_fill = panel_bg;
+        vis.window_fill = panel_bg;
+        vis.extreme_bg_color = theme.editor_bg();
+        vis.faint_bg_color = egui::Color32::from_rgba_premultiplied(
+            theme.border[0], theme.border[1], theme.border[2], 30,
+        );
+
+        // Widget visuals (buttons, combo boxes, sliders, etc.)
+        let btn_bg = theme.button_bg();
+        let btn_fg = theme.button_fg();
+
+        // Inactive widgets
+        vis.widgets.inactive.bg_fill = btn_bg;
+        vis.widgets.inactive.fg_stroke = egui::Stroke::new(1.0, btn_fg);
+        vis.widgets.inactive.weak_bg_fill = btn_bg;
+        vis.widgets.inactive.bg_stroke = egui::Stroke::new(0.5, border_color);
+
+        // Hovered widgets
+        vis.widgets.hovered.bg_fill = accent;
+        vis.widgets.hovered.fg_stroke = egui::Stroke::new(1.0, btn_fg);
+        vis.widgets.hovered.weak_bg_fill = accent;
+        vis.widgets.hovered.bg_stroke = egui::Stroke::new(1.0, accent);
+
+        // Active (pressed) widgets
+        vis.widgets.active.bg_fill = accent;
+        vis.widgets.active.fg_stroke = egui::Stroke::new(2.0, btn_fg);
+        vis.widgets.active.weak_bg_fill = accent;
+        vis.widgets.active.bg_stroke = egui::Stroke::new(1.0, accent);
+
+        // Open (expanded combo box, menu, etc.)
+        vis.widgets.open.bg_fill = panel_bg;
+        vis.widgets.open.fg_stroke = egui::Stroke::new(1.0, fg_color);
+        vis.widgets.open.weak_bg_fill = panel_bg;
+        vis.widgets.open.bg_stroke = egui::Stroke::new(1.0, border_color);
+
+        // Non-interactive (labels, static elements)
+        vis.widgets.noninteractive.bg_fill = bg_color;
+        vis.widgets.noninteractive.fg_stroke = egui::Stroke::new(1.0, fg_color);
+        vis.widgets.noninteractive.weak_bg_fill = bg_color;
+        vis.widgets.noninteractive.bg_stroke = egui::Stroke::new(0.5, border_color);
+
+        // Selection
+        vis.selection.bg_fill = theme.selection_color();
+        vis.selection.stroke = egui::Stroke::new(1.0, accent);
+
+        // Window / panel borders & separators
+        vis.window_stroke = egui::Stroke::new(1.0, border_color);
+
+        ctx.set_visuals(vis);
+    }
     // ── menu bar ──────────────────────────────────────────────────────────
 
     fn menu_bar(&mut self, ctx: &Context) {
@@ -356,10 +510,40 @@ impl TimeWarpApp {
 
                 // ── Edit ─────────────────────────────────────────────────
                 ui.menu_button("Edit", |ui| {
-                    if ui.add(egui::Button::new("🔍 Find / Highlight")
+                    if ui.add_enabled(
+                        self.editor.can_undo(),
+                        egui::Button::new("↩ Undo").shortcut_text("Ctrl+Z"),
+                    ).clicked() {
+                        self.editor.undo(); ui.close_menu();
+                    }
+                    if ui.add_enabled(
+                        self.editor.can_redo(),
+                        egui::Button::new("↪ Redo").shortcut_text("Ctrl+Shift+Z"),
+                    ).clicked() {
+                        self.editor.redo(); ui.close_menu();
+                    }
+                    ui.separator();
+                    if ui.add(egui::Button::new("🔍 Find / Replace")
                         .shortcut_text("Ctrl+F")).clicked()
                     {
-                        self.find_open = !self.find_open; ui.close_menu();
+                        self.editor.find_replace_open = !self.editor.find_replace_open;
+                        ui.close_menu();
+                    }
+                    if ui.add(egui::Button::new("↕ Goto Line")
+                        .shortcut_text("Ctrl+G")).clicked()
+                    {
+                        self.editor.goto_open = !self.editor.goto_open;
+                        ui.close_menu();
+                    }
+                    ui.separator();
+                    if ui.button("💬 Toggle Comment").clicked() {
+                        self.editor.toggle_comment(); ui.close_menu();
+                    }
+                    if ui.button("➡ Indent").clicked() {
+                        self.editor.indent_selection(); ui.close_menu();
+                    }
+                    if ui.button("⬅ Unindent").clicked() {
+                        self.editor.unindent_selection(); ui.close_menu();
                     }
                     ui.separator();
                     if ui.add(egui::Button::new("🔎 Zoom In")
@@ -421,6 +605,19 @@ impl TimeWarpApp {
                 ui.menu_button("View", |ui| {
                     ui.checkbox(&mut self.left_panel, "Left panel");
                     ui.checkbox(&mut self.debug_mode, "Debug mode");
+                    ui.separator();
+                    if ui.button("⚙ Layout Preferences…").clicked() {
+                        self.layout_prefs_open = true;
+                        ui.close_menu();
+                    }
+                    ui.separator();
+                    if ui.checkbox(&mut self.input_docked, "Input bar docked").changed() {
+                        // If undocking, auto-open the floating window
+                        if !self.input_docked {
+                            self.input_window_open = true;
+                        }
+                    }
+                    ui.checkbox(&mut self.iot_panel_open, "IoT Panel");
                     ui.separator();
                     for (label, split) in [
                         ("⬛ Horizontal split",   CanvasSplit::Horizontal),
@@ -614,7 +811,7 @@ impl TimeWarpApp {
         TopBottomPanel::bottom("status_bar").show(ctx, |ui| {
             ui.horizontal(|ui| {
                 // Build marker — proves the user is running the latest code
-                ui.label("[b5]");
+                ui.label("[b6-iot]");
                 ui.separator();
                 let file_str = self.current_file.as_ref()
                     .map(|p| p.display().to_string())
@@ -649,33 +846,248 @@ impl TimeWarpApp {
         });
     }
 
+    // ── layout preferences window ────────────────────────────────────────
+
+    fn layout_prefs_window(&mut self, ctx: &Context) {
+        if !self.layout_prefs_open { return; }
+
+        egui::Window::new("⚙ Layout Preferences")
+            .resizable(true)
+            .collapsible(true)
+            .default_width(340.0)
+            .open(&mut self.layout_prefs_open)
+            .show(ctx, |ui| {
+                ui.heading("Panel Sizes");
+                ui.add_space(4.0);
+
+                ui.horizontal(|ui| {
+                    ui.label("Left panel width:");
+                    ui.add(egui::Slider::new(&mut self.panel_sizes.left_panel_width, 120.0..=500.0).suffix(" px"));
+                });
+                ui.horizontal(|ui| {
+                    ui.label("Canvas width:");
+                    ui.add(egui::Slider::new(&mut self.panel_sizes.canvas_width, 200.0..=1200.0).suffix(" px"));
+                });
+                ui.horizontal(|ui| {
+                    ui.label("Canvas height:");
+                    ui.add(egui::Slider::new(&mut self.panel_sizes.canvas_height, 100.0..=800.0).suffix(" px"));
+                });
+                ui.horizontal(|ui| {
+                    ui.label("Output height:");
+                    ui.add(egui::Slider::new(&mut self.panel_sizes.output_height, 80.0..=600.0).suffix(" px"));
+                });
+                ui.horizontal(|ui| {
+                    ui.label("Right panel width:");
+                    ui.add(egui::Slider::new(&mut self.panel_sizes.right_panel_width, 200.0..=1000.0).suffix(" px"));
+                });
+                ui.horizontal(|ui| {
+                    ui.label("Input area height:");
+                    ui.add(egui::Slider::new(&mut self.panel_sizes.input_height, 80.0..=400.0).suffix(" px"));
+                });
+
+                ui.add_space(8.0);
+                if ui.button("Reset to Defaults").clicked() {
+                    self.panel_sizes = PanelSizes::default();
+                }
+            });
+    }
+
+    // ── floating input window ─────────────────────────────────────────────
+
+    fn input_window(&mut self, ctx: &Context) {
+        let waiting = matches!(self.interpreter.state, RunState::WaitingInput);
+        // When undocked and waiting, force open
+        if waiting && !self.input_docked {
+            self.input_window_open = true;
+        }
+        if !self.input_window_open { return; }
+
+        let prompt: String = self.interpreter.ctx.input_requests
+            .last()
+            .map(|(p, _, _)| p.clone())
+            .unwrap_or_else(|| "? ".to_string());
+
+        let theme = self.themes.current().clone();
+        let mut open = self.input_window_open;
+
+        egui::Window::new("⌨ Program Input")
+            .resizable(true)
+            .collapsible(false)
+            .default_width(480.0)
+            .default_height(self.panel_sizes.input_height)
+            .open(&mut open)
+            .show(ctx, |ui| {
+                if waiting {
+                    ui.colored_label(theme.warning(), format!("Prompt: {prompt}"));
+                    ui.add_space(4.0);
+                    let resp = ui.add(
+                        egui::TextEdit::multiline(&mut self.input_buf)
+                            .desired_width(f32::INFINITY)
+                            .desired_rows(3)
+                            .hint_text("Type your response here…")
+                            .font(egui::FontId::monospace(14.0)),
+                    );
+                    ui.add_space(4.0);
+                    ui.horizontal(|ui| {
+                        let submit_enter = resp.lost_focus()
+                            && ui.input(|i| i.key_pressed(Key::Enter));
+                        if ui.button("⏎ Submit").clicked() || submit_enter {
+                            let text = std::mem::take(&mut self.input_buf);
+                            self.output.append_input_echo(&prompt, &text);
+                            self.interpreter.provide_input(&text);
+                            self.status = "Running…".to_string();
+                        }
+                        ui.label(RichText::new("Press Enter or click Submit").weak());
+                    });
+                    resp.request_focus();
+                } else {
+                    ui.label("No program is waiting for input.");
+                    ui.label(RichText::new("Run a program that uses INPUT to enter data here.").weak());
+                }
+            });
+
+        self.input_window_open = open;
+    }
+
+    // ── IoT panel ─────────────────────────────────────────────────────────
+
+    fn iot_panel(&mut self, ctx: &Context) {
+        if !self.iot_panel_open { return; }
+
+        egui::Window::new("🔌 IoT / Raspberry Pi")
+            .resizable(true)
+            .collapsible(true)
+            .default_width(400.0)
+            .default_height(500.0)
+            .open(&mut self.iot_panel_open)
+            .show(ctx, |ui| {
+                let theme = self.themes.current().clone();
+
+                ui.heading("GPIO Pin Monitor");
+                ui.add_space(4.0);
+
+                // Board selector
+                ui.horizontal(|ui| {
+                    ui.label("Board:");
+                    for board in tw_iot::board::Board::all() {
+                        let sel = self.interpreter.gpio.board == *board;
+                        if ui.selectable_label(sel, board.name()).clicked() {
+                            self.interpreter.gpio = tw_iot::GpioManager::new(*board);
+                            let _ = self.interpreter.gpio.connect();
+                        }
+                    }
+                });
+                ui.add_space(2.0);
+                ui.horizontal(|ui| {
+                    let conn_text = if self.interpreter.gpio.connected {
+                        RichText::new("● Connected").color(theme.success())
+                    } else {
+                        RichText::new("○ Disconnected").color(theme.error())
+                    };
+                    ui.label(conn_text);
+                    if !self.interpreter.gpio.connected {
+                        if ui.button("Connect").clicked() {
+                            let _ = self.interpreter.gpio.connect();
+                        }
+                    }
+                    if ui.button("🔄 Reset GPIO").clicked() {
+                        self.interpreter.gpio.reset();
+                    }
+                });
+                ui.separator();
+
+                // GPIO pin table showing real data
+                ScrollArea::vertical().max_height(250.0).show(ui, |ui| {
+                    egui::Grid::new("gpio_grid")
+                        .striped(true)
+                        .min_col_width(50.0)
+                        .show(ui, |ui| {
+                            ui.label(RichText::new("Pin").strong());
+                            ui.label(RichText::new("Mode").strong());
+                            ui.label(RichText::new("State").strong());
+                            ui.label(RichText::new("Value").strong());
+                            ui.label(RichText::new("Action").strong());
+                            ui.end_row();
+
+                            for pin_num in self.interpreter.gpio.sorted_pins() {
+                                if let Some(info) = self.interpreter.gpio.pins.get(&pin_num) {
+                                    ui.label(format!("GP{}", info.number));
+
+                                    let mode_text = format!("{}", info.mode);
+                                    ui.label(&mode_text);
+
+                                    let state_color = match info.state {
+                                        tw_iot::PinState::High => theme.success(),
+                                        tw_iot::PinState::Low  => theme.fg(),
+                                        tw_iot::PinState::Unknown => theme.border_color(),
+                                    };
+                                    ui.colored_label(state_color, format!("{}", info.state));
+
+                                    if info.value != 0.0 {
+                                        ui.label(format!("{:.2}", info.value));
+                                    } else {
+                                        ui.label("—");
+                                    }
+
+                                    // Simulator toggle for input pins
+                                    let is_input = info.mode == tw_iot::gpio::PinMode::Input;
+                                    let pin_n = info.number;
+                                    if is_input {
+                                        if ui.small_button("⇅").on_hover_text("Toggle pin").clicked() {
+                                            self.interpreter.gpio.sim_toggle(pin_n);
+                                        }
+                                    } else {
+                                        ui.label("");
+                                    }
+
+                                    ui.end_row();
+                                }
+                            }
+                        });
+                });
+
+                ui.separator();
+                ui.heading("GPIO Log");
+                ScrollArea::vertical()
+                    .id_salt("gpio_log")
+                    .max_height(120.0)
+                    .show(ui, |ui| {
+                        let log = &self.interpreter.gpio.log;
+                        if log.is_empty() {
+                            ui.label(RichText::new("No GPIO activity yet.").weak());
+                        } else {
+                            for entry in log.iter().rev().take(50) {
+                                ui.label(RichText::new(entry).monospace().size(11.0));
+                            }
+                        }
+                    });
+            });
+    }
+
     // ── central workspace ─────────────────────────────────────────────────
 
     fn central(&mut self, ctx: &Context) {
         let theme = self.themes.current().clone();
+        let ps = &self.panel_sizes;
 
         match self.split {
             // ── Horizontal: editor on top, canvas+output on the bottom ──────
             CanvasSplit::Horizontal => {
-                // Add the bottom panel first (panels must come before CentralPanel).
                 TopBottomPanel::bottom("h_bottom")
                     .resizable(true)
                     .min_height(80.0)
-                    .default_height(300.0)
+                    .default_height(ps.canvas_height)
                     .show(ctx, |ui| {
                         ui.visuals_mut().extreme_bg_color = theme.editor_bg();
-                        // Split canvas (left) and output (right) side by side.
                         egui::SidePanel::left("h_canvas")
                             .resizable(true)
                             .min_width(80.0)
-                            .default_width(400.0)
+                            .default_width(ps.canvas_width)
                             .show_inside(ui, |ui| {
                                 self.canvas.show(ui, &self.interpreter.ctx.turtle);
                             });
-                        // Output fills the remaining right space.
                         self.output.show(ui, &theme);
                     });
-                // Editor fills the remaining central area.
                 CentralPanel::default().show(ctx, |ui| {
                     ui.visuals_mut().extreme_bg_color = theme.editor_bg();
                     let changed = self.editor.show(ui, &theme);
@@ -684,25 +1096,21 @@ impl TimeWarpApp {
             }
             // ── Vertical: editor on left, canvas+output on right ────────────
             CanvasSplit::Vertical => {
-                // Right panel for canvas+output.
                 egui::SidePanel::right("v_right")
                     .resizable(true)
                     .min_width(200.0)
-                    .default_width(500.0)
+                    .default_width(ps.right_panel_width)
                     .show(ctx, |ui| {
                         ui.visuals_mut().extreme_bg_color = theme.editor_bg();
-                        // Output at the bottom of the right panel.
                         TopBottomPanel::bottom("v_output")
                             .resizable(true)
                             .min_height(80.0)
-                            .default_height(250.0)
+                            .default_height(ps.output_height)
                             .show_inside(ui, |ui| {
                                 self.output.show(ui, &theme);
                             });
-                        // Canvas fills the remaining top space.
                         self.canvas.show(ui, &self.interpreter.ctx.turtle);
                     });
-                // Editor on the left.
                 CentralPanel::default().show(ctx, |ui| {
                     ui.visuals_mut().extreme_bg_color = theme.editor_bg();
                     let changed = self.editor.show(ui, &theme);
@@ -742,6 +1150,9 @@ impl eframe::App for TimeWarpApp {
         // Update window title
         ctx.send_viewport_cmd(egui::ViewportCommand::Title(self.window_title()));
 
+        // ── 0. Apply theme to global egui visuals ─────────────────────────
+        self.apply_theme_visuals(ctx);
+
         // ── 1. Handle all user interactions first ─────────────────────────
         // This ensures that action_run() (triggered by toolbar, menu, or
         // keyboard shortcut) sets state=Running BEFORE step_batch checks it.
@@ -757,8 +1168,19 @@ impl eframe::App for TimeWarpApp {
         self.menu_bar(ctx);
         self.toolbar(ctx);
         self.status_bar(ctx);   // bottom, before input_bar
-        self.input_bar(ctx);    // bottom-most, only when waiting
-        self.find_bar(ctx);     // top, just below toolbar
+
+        // Input: either docked bar or floating window
+        if self.input_docked {
+            self.input_bar(ctx);    // bottom-most, only when waiting
+        } else {
+            self.input_window(ctx); // floating window
+        }
+
+        self.find_bar(ctx);     // top, just below toolbar (legacy)
+
+        // Modal/floating windows
+        self.layout_prefs_window(ctx);
+        self.iot_panel(ctx);
 
         // ── 2. Execute program if running ─────────────────────────────────
         // Now that interactions have been processed, step_batch will catch
@@ -789,7 +1211,7 @@ impl eframe::App for TimeWarpApp {
         if self.left_panel {
             SidePanel::left("left_panel")
                 .resizable(true)
-                .default_width(240.0)
+                .default_width(self.panel_sizes.left_panel_width)
                 .show(ctx, |ui| {
                     let mut themes = std::mem::take(&mut self.themes);
                     self.feature_pane.show(ui, &mut themes);

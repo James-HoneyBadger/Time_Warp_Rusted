@@ -166,6 +166,19 @@ fn exec_tokens_inner(ctx: &mut ExecContext, tokens: &[String], start: usize) -> 
                 i += 1 + adv;
             }
 
+            // ── Fill ─────────────────────────────────────────────────────
+            "BEGINFILL" | "BEGIN_FILL" | "FILLED" => {
+                // Optional fill colour argument; defaults to current pen colour
+                let (adv, color) = get_color(ctx, tokens, i + 1);
+                let fill_c = color.unwrap_or(ctx.turtle.pen_color);
+                ctx.turtle.begin_fill(fill_c);
+                i += 1 + adv;
+            }
+            "ENDFILL" | "END_FILL" => {
+                ctx.turtle.end_fill();
+                i += 1;
+            }
+
             // ── Label ────────────────────────────────────────────────────
             "LABEL" => {
                 let text = if i + 1 < tokens.len() {
@@ -216,9 +229,26 @@ fn exec_tokens_inner(ctx: &mut ExecContext, tokens: &[String], start: usize) -> 
                 // MAKE "varname value
                 if i + 2 < tokens.len() {
                     let name = tokens[i + 1].trim_matches('"').to_uppercase();
-                    let (v, adv) = get_number(ctx, tokens, i + 2);
-                    ctx.set_var(&name, v);
-                    i += 2 + adv;
+                    let raw = &tokens[i + 2];
+                    // If the value looks like a quoted word (Logo `"word`), store
+                    // it as a string variable so colour names survive round-trips
+                    // through `:VAR` references.
+                    let bare = raw.trim_matches('"');
+                    if raw.starts_with('"') && bare.parse::<f64>().is_err() {
+                        // String value — store in both string and numeric tables
+                        ctx.set_str(&name, bare.to_string());
+                        ctx.set_var(&name, 0.0); // numeric fallback
+                        i += 3;
+                    } else if raw.starts_with('[') {
+                        // Bracket-list value (e.g. `MAKE "C [255 0 0]`) — store as string
+                        ctx.set_str(&name, raw.clone());
+                        ctx.set_var(&name, 0.0);
+                        i += 3;
+                    } else {
+                        let (v, adv) = get_number(ctx, tokens, i + 2);
+                        ctx.set_var(&name, v);
+                        i += 2 + adv;
+                    }
                 } else { i += 1; }
             }
 
@@ -322,6 +352,38 @@ fn exec_tokens_inner(ctx: &mut ExecContext, tokens: &[String], start: usize) -> 
             // ── WAIT ─────────────────────────────────────────────────────
             "WAIT" | "BYE" => {
                 return (ControlFlow::End, i - start + 1);
+            }
+
+            // ── GPIO / IoT Commands ──────────────────────────────────────
+            "PINMODE" => {
+                let (pin, a1) = get_number(ctx, tokens, i + 1);
+                let mode = if i + 1 + a1 < tokens.len() {
+                    tokens[i + 1 + a1].to_uppercase()
+                } else { "OUTPUT".to_string() };
+                ctx.emit(&format!("GPIO:PINMODE {} {}\n", pin as u8, mode));
+                i += 2 + a1;
+            }
+            "DIGITALWRITE" | "SETPIN" => {
+                let (pin, a1) = get_number(ctx, tokens, i + 1);
+                let (val, a2) = get_number(ctx, tokens, i + 1 + a1);
+                ctx.emit(&format!("GPIO:WRITE {} {}\n", pin as u8, val as u8));
+                i += 1 + a1 + a2;
+            }
+            "DIGITALREAD" | "READPIN" => {
+                let (pin, a1) = get_number(ctx, tokens, i + 1);
+                ctx.emit(&format!("GPIO:READ {}\n", pin as u8));
+                i += 1 + a1;
+            }
+            "PWMWRITE" => {
+                let (pin, a1) = get_number(ctx, tokens, i + 1);
+                let (duty, a2) = get_number(ctx, tokens, i + 1 + a1);
+                let norm = if duty > 1.0 { duty / 255.0 } else { duty };
+                ctx.emit(&format!("GPIO:PWM {} {:.4}\n", pin as u8, norm));
+                i += 1 + a1 + a2;
+            }
+            "GPIORESET" => {
+                ctx.emit("GPIO:RESET\n");
+                i += 1;
             }
 
             // ── Procedure call or `:var` reference ───────────────────────
@@ -431,17 +493,54 @@ fn get_number(ctx: &ExecContext, tokens: &[String], pos: usize) -> (f64, usize) 
 }
 
 /// Get a colour from the next 1–3 tokens.  Returns (tokens_consumed, color).
-fn get_color(_ctx: &ExecContext, tokens: &[String], pos: usize) -> (usize, Option<tw_graphics::turtle::Rgb>) {
+fn get_color(ctx: &ExecContext, tokens: &[String], pos: usize) -> (usize, Option<tw_graphics::turtle::Rgb>) {
     if pos >= tokens.len() { return (0, None); }
     let tok = &tokens[pos];
 
+    // Strip Logo quote marks: `"RED"` → `RED`, `"RED` → `RED`, `"#FF0000` → `#FF0000`
+    let bare = tok.trim_matches('"');
+
+    // Resolve `:VAR` variable references — the variable may hold a palette index,
+    // a colour name string, a hex string, or an [R G B] bracket list.
+    if tok.starts_with(':') {
+        let var = tok[1..].to_uppercase();
+
+        // First check string variables — they may hold a colour name, hex, or [r g b]
+        let sval = ctx.get_str(&var);
+        if !sval.is_empty() {
+            // Try bracket-list stored as string: "[255 0 0]"
+            if sval.starts_with('[') {
+                let inner = sval.trim_matches(|c: char| c == '[' || c == ']');
+                let nums: Vec<u8> = inner.split_whitespace()
+                    .filter_map(|s| s.parse::<u8>().ok())
+                    .collect();
+                if nums.len() >= 3 {
+                    return (1, Some((nums[0], nums[1], nums[2])));
+                }
+            }
+            if let Some(c) = parse_color(&sval) {
+                return (1, Some(c));
+            }
+        }
+
+        // Fall back to numeric variable → palette index
+        let val = ctx.get_var(&var);
+        if val >= 0.0 && val <= 255.0 {
+            if let Some(c) = tw_graphics::turtle::default_palette_16(val as u8) {
+                return (1, Some(c));
+            }
+        }
+
+        return (1, None);
+    }
+
     // Numeric palette index
-    if let Ok(idx) = tok.parse::<u8>() {
+    if let Ok(idx) = bare.parse::<u8>() {
         return (1, tw_graphics::turtle::default_palette_16(idx));
     }
 
-    // Named colour (single token)
-    if let Some(c) = parse_color(tok) {
+    // Named colour or hex colour (single token)
+    if let Some(c) = parse_color(bare) {
         return (1, Some(c));
     }
 
@@ -456,7 +555,9 @@ fn get_color(_ctx: &ExecContext, tokens: &[String], pos: usize) -> (usize, Optio
         }
     }
 
-    (0, None)
+    // Always consume the argument token even if we could not parse it,
+    // so it does not leak into the token stream as an unrecognised command.
+    (1, None)
 }
 
 fn strip_brackets(s: &str) -> String {

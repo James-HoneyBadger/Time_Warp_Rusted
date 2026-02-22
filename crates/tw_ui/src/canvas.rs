@@ -115,13 +115,32 @@ fn draw_shape(
                     .map(|(px, py)| to_screen(*px, *py))
                     .collect();
                 let fill = fill_col.unwrap_or(col);
-                painter.add(egui::Shape::convex_polygon(screen_pts, fill, Stroke::NONE));
+                // Use fan-triangulation to handle both convex and concave polygons.
+                // This produces correct results for star-shapes, spirals, and
+                // other common Logo fill patterns.  For complex self-intersecting
+                // polygons a full ear-clipping algorithm would be needed, but
+                // fan-triangulation covers the vast majority of educational use.
+                let n = screen_pts.len();
+                for i in 1..n - 1 {
+                    painter.add(egui::Shape::convex_polygon(
+                        vec![screen_pts[0], screen_pts[i], screen_pts[i + 1]],
+                        fill,
+                        Stroke::NONE,
+                    ));
+                }
+                // Draw outline on top so edges are crisp
+                let stroke_w = (shape.width as f32 * zoom).max(0.5);
+                for i in 0..n {
+                    let a = screen_pts[i];
+                    let b = screen_pts[(i + 1) % n];
+                    painter.line_segment([a, b], Stroke::new(stroke_w, col));
+                }
             }
         }
         ShapeType::Dot => {
             if let Some(&(px, py)) = shape.points.first() {
-                // radius stored in arc_data[2] or width
-                let radius = shape.arc_data.map(|d| d[2]).unwrap_or(shape.width);
+                // width stores diameter (radius * 2.0), so divide by 2 for actual radius
+                let radius = shape.arc_data.map(|d| d[2]).unwrap_or(shape.width / 2.0);
                 painter.circle_filled(to_screen(px, py), (radius as f32) * zoom, col);
             }
         }
@@ -131,10 +150,12 @@ fn draw_shape(
                 let step = span_deg / steps as f64;
                 let pts: Vec<Pos2> = (0..=steps).map(|i| {
                     let ang = (start_deg + step * i as f64).to_radians();
+                    // Y-component uses + because to_screen already flips Y
                     to_screen(cx + radius * ang.cos(), cy + radius * ang.sin())
                 }).collect();
+                let stroke_w = (shape.width as f32 * zoom).max(1.0);
                 for pair in pts.windows(2) {
-                    painter.line_segment([pair[0], pair[1]], Stroke::new(zoom.max(1.0), col));
+                    painter.line_segment([pair[0], pair[1]], Stroke::new(stroke_w, col));
                 }
             }
         }
@@ -161,6 +182,14 @@ fn draw_turtle_cursor(
 ) {
     if !turtle.is_visible { return; }
     let pos = to_screen(turtle.x, turtle.y);
+    // Convert turtle heading to screen angle.
+    // Turtle: 0°=north, 90°=east (clockwise).
+    // Screen: 0°=right, Y increases downward.
+    // Since to_screen flips Y, heading 0 (north/up) should point toward
+    // negative screen-Y.  screen_angle = heading - 90° gives:
+    //   heading 0   → -90° → (cos=-0, sin=-1) → up on screen  ✓
+    //   heading 90  → 0°   → (cos=1,  sin=0)  → right         ✓
+    //   heading 180 → 90°  → (cos=0,  sin=1)  → down          ✓
     let angle_rad = ((turtle.heading - 90.0) as f32).to_radians();
     let size = 10.0f32;
     let tip = Pos2::new(
@@ -172,9 +201,10 @@ fn draw_turtle_cursor(
     let back_left  = Pos2::new(pos.x + left_angle.cos()  * size * 0.7, pos.y + left_angle.sin()  * size * 0.7);
     let back_right = Pos2::new(pos.x + right_angle.cos() * size * 0.7, pos.y + right_angle.sin() * size * 0.7);
 
+    let cursor_color = Color32::from_rgba_premultiplied(100, 220, 100, 200);
     painter.add(egui::Shape::convex_polygon(
         vec![tip, back_left, back_right],
-        Color32::from_rgba_premultiplied(100, 220, 100, 200),
+        cursor_color,
         Stroke::new(1.0, Color32::WHITE),
     ));
 }

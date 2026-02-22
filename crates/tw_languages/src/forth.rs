@@ -386,6 +386,14 @@ impl ForthExecutor {
                     ctx.turtle.set_pen_color(color);
                 }
             }
+            "COLOR" => {
+                // COLOR word — accept a named colour or palette index from the stack
+                // (Forth-style: push the colour index/name, then call COLOR)
+                let c = self.pop() as u8;
+                if let Some(color) = tw_graphics::turtle::default_palette_16(c) {
+                    ctx.turtle.set_pen_color(color);
+                }
+            }
             "SETX" => { let x = self.pop() as f64; ctx.turtle.set_x(x); }
             "SETY" => { let y = self.pop() as f64; ctx.turtle.set_y(y); }
 

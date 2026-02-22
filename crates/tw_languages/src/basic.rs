@@ -238,6 +238,71 @@ pub fn execute_basic(ctx: &mut ExecContext, command: &str) -> ControlFlow {
         return ControlFlow::Continue;
     }
 
+    // ── GPIO / IoT Commands ─────────────────────────────────────────────
+    // These emit special GPIO: prefixed output that the runtime intercepts.
+    if cmd_up.starts_with("PINMODE ") || cmd_up.starts_with("PIN MODE ") {
+        // PINMODE pin, mode  (mode: INPUT, OUTPUT, PWM)
+        let args = after_first_word(command);
+        let args = args.strip_prefix("MODE").unwrap_or(args).trim();
+        let parts: Vec<&str> = args.split(',').map(|s| s.trim()).collect();
+        if parts.len() >= 2 {
+            let pin = ctx.eval_f64(parts[0]) as u8;
+            let mode = parts[1].to_uppercase();
+            ctx.emit(&format!("GPIO:PINMODE {} {}\n", pin, mode));
+        }
+        return ControlFlow::Continue;
+    }
+    if cmd_up.starts_with("DIGITALWRITE ") {
+        // DIGITALWRITE pin, value  (value: HIGH/1 or LOW/0)
+        let args = command[13..].trim();
+        let parts: Vec<&str> = args.split(',').map(|s| s.trim()).collect();
+        if parts.len() >= 2 {
+            let pin = ctx.eval_f64(parts[0]) as u8;
+            let val = parts[1].to_uppercase();
+            let high = val == "HIGH" || val == "1" || val == "TRUE" || val == "ON";
+            ctx.emit(&format!("GPIO:WRITE {} {}\n", pin, if high { 1 } else { 0 }));
+        }
+        return ControlFlow::Continue;
+    }
+    if cmd_up.starts_with("DIGITALREAD ") || cmd_up.starts_with("DIGITALREAD(") {
+        // var = DIGITALREAD(pin)  — handled via eval, but standalone also works
+        let args = command[11..].trim().trim_matches(|c| c == '(' || c == ')');
+        let pin = ctx.eval_f64(args) as u8;
+        ctx.emit(&format!("GPIO:READ {}\n", pin));
+        return ControlFlow::Continue;
+    }
+    if cmd_up.starts_with("PWMWRITE ") || cmd_up.starts_with("ANALOGWRITE ") {
+        // PWMWRITE pin, duty  (duty: 0-255 or 0.0-1.0)
+        let offset = if cmd_up.starts_with("PWM") { 9 } else { 12 };
+        let args = command[offset..].trim();
+        let parts: Vec<&str> = args.split(',').map(|s| s.trim()).collect();
+        if parts.len() >= 2 {
+            let pin = ctx.eval_f64(parts[0]) as u8;
+            let duty = ctx.eval_f64(parts[1]);
+            // Normalize: if > 1.0, treat as 0-255 range
+            let normalized = if duty > 1.0 { duty / 255.0 } else { duty };
+            ctx.emit(&format!("GPIO:PWM {} {:.4}\n", pin, normalized));
+        }
+        return ControlFlow::Continue;
+    }
+    if cmd_up.starts_with("GPIORESET") || cmd_up.starts_with("GPIO RESET") {
+        ctx.emit("GPIO:RESET\n");
+        return ControlFlow::Continue;
+    }
+    if cmd_up.starts_with("SERVOWRITE ") {
+        // SERVOWRITE pin, angle  (0-180)
+        let args = command[11..].trim();
+        let parts: Vec<&str> = args.split(',').map(|s| s.trim()).collect();
+        if parts.len() >= 2 {
+            let pin = ctx.eval_f64(parts[0]) as u8;
+            let angle = ctx.eval_f64(parts[1]);
+            // Convert servo angle (0-180) to PWM duty (approx 2.5%-12.5%)
+            let duty = 0.025 + (angle / 180.0) * 0.1;
+            ctx.emit(&format!("GPIO:PWM {} {:.4}\n", pin, duty));
+        }
+        return ControlFlow::Continue;
+    }
+
     // ── Generic assignment (has `=` and isn't IF/FOR) ─────────────────────
     if command.contains('=')
         && !cmd_up.starts_with("IF ")
@@ -898,23 +963,80 @@ fn basic_color(ctx: &mut ExecContext, args: &str) -> ControlFlow {
 // ── LINE ──────────────────────────────────────────────────────────────────────
 
 fn basic_line(ctx: &mut ExecContext, args: &str) -> ControlFlow {
-    // LINE (x1,y1)-(x2,y2)[,color[,BF]]
-    let args = args.replace("-(", ",").replace("(", "").replace(")", "");
-    let nums: Vec<f64> = args
-        .split(',')
-        .filter_map(|s| ctx.eval_expr(s.trim()).ok().or_else(|| s.trim().parse().ok()))
+    // LINE (x1,y1)-(x2,y2)[,color[,B|BF]]
+    let args_upper = args.to_uppercase();
+    let has_bf = args_upper.contains(",BF") || args_upper.contains(", BF");
+    let has_b  = !has_bf && (args_upper.ends_with(",B") || args_upper.ends_with(", B")
+                          || args_upper.contains(",B,") || args_upper.contains(", B,"));
+
+    // Strip B/BF flags, then remove parens and `-(` separator
+    let cleaned = args_upper
+        .replace(",BF", "").replace(", BF", "")
+        .replace(", B", "").replace(",B", "");
+    let coord_args = cleaned.replace("-(", ",").replace("(", "").replace(")", "");
+    let parts: Vec<&str> = coord_args.split(',').collect();
+    let nums: Vec<f64> = parts.iter()
+        .filter_map(|s| {
+            let s = s.trim();
+            if s.is_empty() { return None; }
+            ctx.eval_expr(s).ok().or_else(|| s.parse().ok())
+        })
         .collect();
+
+    // Save and optionally apply color from 5th numeric parameter
+    let saved_color = ctx.turtle.pen_color;
+    if nums.len() >= 5 {
+        if let Some(c) = tw_graphics::turtle::default_palette_16(nums[4] as u8) {
+            ctx.turtle.set_pen_color(c);
+        }
+    }
 
     if nums.len() >= 4 {
         let (x1, y1, x2, y2) = (nums[0], nums[1], nums[2], nums[3]);
-        let saved = (ctx.turtle.x, ctx.turtle.y);
-        let was_down = ctx.turtle.pen_down;
-        ctx.turtle.pen_down = false;
-        ctx.turtle.set_pos(x1, y1);
-        ctx.turtle.pen_down = true;
-        ctx.turtle.move_to(x2, y2);
-        ctx.turtle.pen_down = was_down;
-        ctx.turtle.set_pos(saved.0, saved.1);
+        if has_bf {
+            // Filled box
+            let saved = (ctx.turtle.x, ctx.turtle.y);
+            let was_down = ctx.turtle.pen_down;
+            ctx.turtle.pen_down = false;
+            ctx.turtle.set_pos(x1, y1);
+            ctx.turtle.pen_down = true;
+            ctx.turtle.begin_fill(ctx.turtle.pen_color);
+            ctx.turtle.move_to(x2, y1);
+            ctx.turtle.move_to(x2, y2);
+            ctx.turtle.move_to(x1, y2);
+            ctx.turtle.move_to(x1, y1);
+            ctx.turtle.end_fill();
+            ctx.turtle.pen_down = was_down;
+            ctx.turtle.set_pos(saved.0, saved.1);
+        } else if has_b {
+            // Box outline (no fill)
+            let saved = (ctx.turtle.x, ctx.turtle.y);
+            let was_down = ctx.turtle.pen_down;
+            ctx.turtle.pen_down = false;
+            ctx.turtle.set_pos(x1, y1);
+            ctx.turtle.pen_down = true;
+            ctx.turtle.move_to(x2, y1);
+            ctx.turtle.move_to(x2, y2);
+            ctx.turtle.move_to(x1, y2);
+            ctx.turtle.move_to(x1, y1);
+            ctx.turtle.pen_down = was_down;
+            ctx.turtle.set_pos(saved.0, saved.1);
+        } else {
+            // Plain line
+            let saved = (ctx.turtle.x, ctx.turtle.y);
+            let was_down = ctx.turtle.pen_down;
+            ctx.turtle.pen_down = false;
+            ctx.turtle.set_pos(x1, y1);
+            ctx.turtle.pen_down = true;
+            ctx.turtle.move_to(x2, y2);
+            ctx.turtle.pen_down = was_down;
+            ctx.turtle.set_pos(saved.0, saved.1);
+        }
+    }
+
+    // Restore previous pen color
+    if nums.len() >= 5 {
+        ctx.turtle.set_pen_color(saved_color);
     }
     ControlFlow::Continue
 }
@@ -924,27 +1046,43 @@ fn basic_line(ctx: &mut ExecContext, args: &str) -> ControlFlow {
 fn basic_circle(ctx: &mut ExecContext, args: &str) -> ControlFlow {
     // CIRCLE (cx,cy), radius [,color]
     let cleaned = args.replace("(", "").replace(")", "");
-    let nums: Vec<f64> = cleaned
-        .split(',')
-        .filter_map(|s| ctx.eval_expr(s.trim()).ok())
+    let parts: Vec<&str> = cleaned.split(',').map(|s| s.trim()).collect();
+    let nums: Vec<f64> = parts.iter()
+        .filter_map(|s| ctx.eval_expr(s).ok())
         .collect();
     if nums.len() >= 3 {
         let (cx, cy, r) = (nums[0], nums[1], nums[2]);
-        let steps = (2.0 * std::f64::consts::PI * r / 2.0) as usize + 16;
-        let step_angle = 360.0 / steps as f64;
+
+        // Optional color as 4th parameter
+        let saved_color = ctx.turtle.pen_color;
+        if nums.len() >= 4 {
+            if let Some(c) = tw_graphics::turtle::default_palette_16(nums[3] as u8) {
+                ctx.turtle.set_pen_color(c);
+            }
+        }
+
+        let steps = ((2.0 * std::f64::consts::PI * r / 2.0) as usize).max(16);
+        let step_angle = 2.0 * std::f64::consts::PI / steps as f64;
         let saved = (ctx.turtle.x, ctx.turtle.y, ctx.turtle.heading, ctx.turtle.pen_down);
         ctx.turtle.pen_down = false;
         ctx.turtle.set_pos(cx + r, cy);
         ctx.turtle.pen_down = true;
         for i in 1..=steps {
-            let angle = (i as f64 * step_angle).to_radians();
+            let angle = i as f64 * step_angle;
             let nx = cx + r * angle.cos();
             let ny = cy + r * angle.sin();
             ctx.turtle.move_to(nx, ny);
         }
+        // Ensure circle is closed by returning to start point
+        ctx.turtle.move_to(cx + r, cy);
         ctx.turtle.pen_down = saved.3;
         ctx.turtle.set_pos(saved.0, saved.1);
         ctx.turtle.heading = saved.2;
+
+        // Restore color
+        if nums.len() >= 4 {
+            ctx.turtle.set_pen_color(saved_color);
+        }
     }
     ControlFlow::Continue
 }
@@ -958,7 +1096,7 @@ fn basic_pset(ctx: &mut ExecContext, args: &str) -> ControlFlow {
         .filter_map(|s| ctx.eval_expr(s.trim()).ok())
         .collect();
     if nums.len() >= 2 {
-        ctx.turtle.dot(1.0, None);
+        // Move to the target position first, then draw the dot
         ctx.turtle.set_pos(nums[0], nums[1]);
         ctx.turtle.dot(1.0, None);
     }

@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 tw_core      = { workspace = true }
 tw_graphics  = { workspace = true }
+tw_iot       = { workspace = true }
 eframe       = { workspace = true }
 egui         = { workspace = true }
 rfd          = { workspace = true }

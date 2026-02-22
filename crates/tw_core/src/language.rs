@@ -47,10 +47,10 @@ impl Language {
             "bas" | "basic" => Some(Language::Basic),
             "pil" | "pilot" => Some(Language::Pilot),
             "logo" | "lg"   => Some(Language::Logo),
-            "c"  | "h"      => Some(Language::C),
-            "pas" | "pascal" | "pp" => Some(Language::Pascal),
+            "c"  | "h" | "cpp" | "hpp" | "cc" | "cxx" => Some(Language::C),
+            "pas" | "pascal" | "pp" | "dpr" | "lpr" => Some(Language::Pascal),
             "pl"  | "pro" | "prolog" | "p" => Some(Language::Prolog),
-            "fth" | "4th" | "fs" | "forth" => Some(Language::Forth),
+            "fth" | "4th" | "fs" | "forth" | "f" => Some(Language::Forth),
             _ => None,
         }
     }
