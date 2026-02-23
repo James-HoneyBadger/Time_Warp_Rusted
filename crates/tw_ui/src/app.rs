@@ -87,6 +87,11 @@ pub struct TimeWarpApp {
     input_docked:      bool,  // true = bottom bar, false = floating window
     // IoT panel
     iot_panel_open:    bool,
+    // Raspberry Pi configuration
+    pi_setup_open:     bool,
+    pi_project_open:   bool,
+    pi_selected_board: usize,   // index into Board::all()
+    pi_auto_open_iot:  bool,    // auto-open IoT panel on project load
 }
 
 impl TimeWarpApp {
@@ -119,6 +124,10 @@ impl TimeWarpApp {
             input_window_open: false,
             input_docked: true,
             iot_panel_open: false,
+            pi_setup_open: false,
+            pi_project_open: false,
+            pi_selected_board: 0,
+            pi_auto_open_iot: true,
         }
     }
 
@@ -657,6 +666,40 @@ impl TimeWarpApp {
                     }
                 });
 
+                // ── Raspberry Pi ─────────────────────────────────────────
+                ui.menu_button("🔌 Raspberry Pi", |ui| {
+                    if ui.button("⚙ Board Setup…").clicked() {
+                        self.pi_setup_open = true;
+                        ui.close_menu();
+                    }
+                    ui.separator();
+                    ui.label("Select Board:");
+                    let boards = tw_iot::board::Board::all();
+                    for (i, board) in boards.iter().enumerate() {
+                        let sel = self.interpreter.gpio.board == *board;
+                        if ui.selectable_label(sel, board.name()).clicked() {
+                            self.pi_selected_board = i;
+                            self.interpreter.gpio = tw_iot::GpioManager::new(*board);
+                            let _ = self.interpreter.gpio.connect();
+                            ui.close_menu();
+                        }
+                    }
+                    ui.separator();
+                    if ui.button("📁 Load Project…").clicked() {
+                        self.pi_project_open = true;
+                        ui.close_menu();
+                    }
+                    ui.separator();
+                    if ui.button("🔌 Open IoT Panel").clicked() {
+                        self.iot_panel_open = true;
+                        ui.close_menu();
+                    }
+                    if ui.button("🔄 Reset All GPIO").clicked() {
+                        self.interpreter.gpio.reset();
+                        ui.close_menu();
+                    }
+                });
+
                 // ── Help ─────────────────────────────────────────────────
                 ui.menu_button("Help", |ui| {
                     if ui.button("📚 Lessons").clicked() {
@@ -1064,6 +1107,204 @@ impl TimeWarpApp {
             });
     }
 
+    // ── Raspberry Pi Board Setup Window ───────────────────────────────────
+
+    fn pi_setup_window(&mut self, ctx: &Context) {
+        if !self.pi_setup_open { return; }
+
+        egui::Window::new("⚙ Raspberry Pi Board Setup")
+            .resizable(true)
+            .collapsible(true)
+            .default_width(480.0)
+            .default_height(420.0)
+            .open(&mut self.pi_setup_open)
+            .show(ctx, |ui| {
+                let theme = self.themes.current().clone();
+
+                ui.heading("Select Your Board");
+                ui.add_space(4.0);
+                ui.label("Choose the Raspberry Pi board you are targeting:");
+                ui.add_space(4.0);
+
+                let boards = tw_iot::board::Board::all();
+                for (i, board) in boards.iter().enumerate() {
+                    let sel = self.interpreter.gpio.board == *board;
+                    let label = format!(
+                        "{}{}",
+                        board.name(),
+                        if sel { "  ✓" } else { "" }
+                    );
+                    if ui.selectable_label(sel, &label).clicked() {
+                        self.pi_selected_board = i;
+                        self.interpreter.gpio = tw_iot::GpioManager::new(*board);
+                        let _ = self.interpreter.gpio.connect();
+                    }
+                }
+
+                ui.separator();
+                ui.heading("Board Capabilities");
+                ui.add_space(2.0);
+
+                let board = self.interpreter.gpio.board;
+                egui::Grid::new("board_caps")
+                    .striped(true)
+                    .min_col_width(140.0)
+                    .show(ui, |ui| {
+                        ui.label(RichText::new("Feature").strong());
+                        ui.label(RichText::new("Status").strong());
+                        ui.end_row();
+
+                        ui.label("GPIO Pins");
+                        ui.label(format!("{}", board.gpio_count()));
+                        ui.end_row();
+
+                        ui.label("WiFi");
+                        ui.label(if board.has_wifi() {
+                            RichText::new("✓ Available").color(theme.success())
+                        } else {
+                            RichText::new("✗ Not available").color(theme.error())
+                        });
+                        ui.end_row();
+
+                        ui.label("I²C");
+                        ui.label(if board.has_i2c() {
+                            RichText::new("✓ Available").color(theme.success())
+                        } else {
+                            RichText::new("✗ Not available").color(theme.error())
+                        });
+                        ui.end_row();
+
+                        ui.label("SPI");
+                        ui.label(if board.has_spi() {
+                            RichText::new("✓ Available").color(theme.success())
+                        } else {
+                            RichText::new("✗ Not available").color(theme.error())
+                        });
+                        ui.end_row();
+
+                        ui.label("PWM");
+                        ui.label(if board.has_pwm() {
+                            RichText::new("✓ Available").color(theme.success())
+                        } else {
+                            RichText::new("✗ Not available").color(theme.error())
+                        });
+                        ui.end_row();
+
+                        ui.label("ADC (Analog)");
+                        ui.label(if board.has_adc() {
+                            RichText::new("✓ Available").color(theme.success())
+                        } else {
+                            RichText::new("✗ Not available").color(theme.error())
+                        });
+                        ui.end_row();
+                    });
+
+                ui.separator();
+                ui.heading("Connection");
+                ui.add_space(2.0);
+                ui.horizontal(|ui| {
+                    let conn_text = if self.interpreter.gpio.connected {
+                        RichText::new("● Connected (Simulator)").color(theme.success())
+                    } else {
+                        RichText::new("○ Disconnected").color(theme.error())
+                    };
+                    ui.label(conn_text);
+                    if !self.interpreter.gpio.connected {
+                        if ui.button("Connect").clicked() {
+                            let _ = self.interpreter.gpio.connect();
+                        }
+                    }
+                });
+
+                ui.separator();
+                ui.heading("Quick Actions");
+                ui.add_space(2.0);
+                ui.horizontal(|ui| {
+                    if ui.button("🔌 Open IoT Panel").clicked() {
+                        self.iot_panel_open = true;
+                    }
+                    if ui.button("📁 Load Project").clicked() {
+                        self.pi_project_open = true;
+                    }
+                    if ui.button("🔄 Reset GPIO").clicked() {
+                        self.interpreter.gpio.reset();
+                    }
+                });
+            });
+    }
+
+    // ── Raspberry Pi Project Browser Window ───────────────────────────────
+
+    fn pi_project_window(&mut self, ctx: &Context) {
+        if !self.pi_project_open { return; }
+
+        // Collect any selection outside the closure to avoid borrow conflicts
+        let mut selected: Option<(Language, String, String)> = None;
+        let mut open_iot = false;
+        let mut open = self.pi_project_open;
+
+        egui::Window::new("📁 Raspberry Pi Projects")
+            .resizable(true)
+            .collapsible(true)
+            .default_width(520.0)
+            .default_height(500.0)
+            .open(&mut open)
+            .show(ctx, |ui| {
+                let theme = self.themes.current().clone();
+                let board = self.interpreter.gpio.board;
+
+                ui.heading(format!("Projects for: {}", board.name()));
+                ui.add_space(2.0);
+                ui.label("Click a project to load it into the editor and configure GPIO.");
+                ui.add_space(4.0);
+
+                ui.checkbox(&mut self.pi_auto_open_iot, "Auto-open IoT Panel on load");
+                ui.separator();
+
+                ScrollArea::vertical().id_salt("pi_projects").show(ui, |ui| {
+                    let projects = pi_projects_for_board(board);
+                    if projects.is_empty() {
+                        ui.label(RichText::new("No built-in projects for this board yet.").weak());
+                        ui.label("Select Pico, Pi Zero, or Pi Zero 2 W for projects.");
+                    } else {
+                        for (title, difficulty, hw_needed, lang, code) in &projects {
+                            ui.add_space(2.0);
+                            ui.horizontal(|ui| {
+                                let diff_color = match *difficulty {
+                                    "Beginner"      => theme.success(),
+                                    "Intermediate"  => egui::Color32::from_rgb(255, 165, 0),
+                                    "Advanced"      => theme.error(),
+                                    _               => theme.fg(),
+                                };
+                                ui.colored_label(diff_color,
+                                    RichText::new(format!("[{}]", difficulty)).strong());
+                                if ui.button(RichText::new(*title).strong()).clicked() {
+                                    selected = Some((*lang, code.to_string(), title.to_string()));
+                                    if self.pi_auto_open_iot {
+                                        open_iot = true;
+                                    }
+                                }
+                            });
+                            ui.label(format!("    Hardware: {}", hw_needed));
+                        }
+                    }
+                });
+            });
+
+        self.pi_project_open = open;
+
+        // Apply the selection after the window closure is done
+        if let Some((lang, code, title)) = selected {
+            self.change_language(lang);
+            self.editor.source = code;
+            self.unsaved = true;
+            self.status = format!("Loaded: {}", title);
+            if open_iot {
+                self.iot_panel_open = true;
+            }
+        }
+    }
+
     // ── central workspace ─────────────────────────────────────────────────
 
     fn central(&mut self, ctx: &Context) {
@@ -1181,6 +1422,8 @@ impl eframe::App for TimeWarpApp {
         // Modal/floating windows
         self.layout_prefs_window(ctx);
         self.iot_panel(ctx);
+        self.pi_setup_window(ctx);
+        self.pi_project_window(ctx);
 
         // ── 2. Execute program if running ─────────────────────────────────
         // Now that interactions have been processed, step_batch will catch
@@ -1232,3 +1475,81 @@ impl eframe::App for TimeWarpApp {
     }
 }
 
+// ── Raspberry Pi project catalogue ────────────────────────────────────
+// Returns (title, difficulty, hardware, Language, source_code)
+fn pi_projects_for_board(
+    board: tw_iot::board::Board,
+) -> Vec<(&'static str, &'static str, &'static str, Language, &'static str)> {
+    use tw_iot::board::Board;
+
+    match board {
+        Board::Pico | Board::PicoW => vec![
+            ("Blink LED",           "Beginner",     "LED + 330Ω on GP15",
+             Language::Basic, include_str!("../../../Examples/projects/pico/01_blink_led.bas")),
+            ("Button & LED",        "Beginner",     "Button GP14, LED GP15",
+             Language::Basic, include_str!("../../../Examples/projects/pico/02_button_led.bas")),
+            ("LED Fader (PWM)",     "Beginner",     "LED + 330Ω on GP15",
+             Language::Basic, include_str!("../../../Examples/projects/pico/03_led_fader.bas")),
+            ("Traffic Light",       "Beginner",     "3 LEDs on GP13-GP15",
+             Language::Basic, include_str!("../../../Examples/projects/pico/04_traffic_light.bas")),
+            ("Analog Sensor",       "Intermediate", "Potentiometer on GP26",
+             Language::Basic, include_str!("../../../Examples/projects/pico/05_analog_sensor.bas")),
+            ("Servo Sweep",         "Intermediate", "Micro servo on GP16",
+             Language::Basic, include_str!("../../../Examples/projects/pico/06_servo_sweep.bas")),
+            ("LED Chaser",          "Intermediate", "6 LEDs on GP10-GP15",
+             Language::Basic, include_str!("../../../Examples/projects/pico/07_led_chaser.bas")),
+            ("LED Dice",            "Intermediate", "7 LEDs + button on GP2",
+             Language::Basic, include_str!("../../../Examples/projects/pico/08_led_dice.bas")),
+            ("Temperature Monitor", "Advanced",     "TMP36 on GP26 (ADC0)",
+             Language::Basic, include_str!("../../../Examples/projects/pico/09_temp_monitor.bas")),
+            ("Turtle Robot",        "Advanced",     "2 DC motors via H-bridge",
+             Language::Logo,  include_str!("../../../Examples/projects/pico/10_turtle_robot.logo")),
+        ],
+        Board::PiZero => vec![
+            ("Blink LED",           "Beginner",     "LED + 330Ω on GPIO17",
+             Language::Basic, include_str!("../../../Examples/projects/zero/01_blink_led.bas")),
+            ("Button & LED",        "Beginner",     "Button GPIO27, LED GPIO17",
+             Language::Basic, include_str!("../../../Examples/projects/zero/02_button_led.bas")),
+            ("PWM LED Fader",       "Beginner",     "LED on GPIO18 (PWM0)",
+             Language::Basic, include_str!("../../../Examples/projects/zero/03_pwm_fader.bas")),
+            ("Traffic Light",       "Beginner",     "3 LEDs on GPIO17/22/27",
+             Language::Basic, include_str!("../../../Examples/projects/zero/04_traffic_light.bas")),
+            ("Servo Controller",    "Intermediate", "Servo on GPIO18",
+             Language::Basic, include_str!("../../../Examples/projects/zero/05_servo_controller.bas")),
+            ("Binary Counter",      "Intermediate", "4 LEDs on GPIO5/6/13/19",
+             Language::Basic, include_str!("../../../Examples/projects/zero/06_binary_counter.bas")),
+            ("Reaction Timer",      "Intermediate", "LED GPIO17, Button GPIO27",
+             Language::Basic, include_str!("../../../Examples/projects/zero/07_reaction_timer.bas")),
+            ("Simon Says",          "Advanced",     "4 LEDs + 4 Buttons",
+             Language::Basic, include_str!("../../../Examples/projects/zero/08_simon_says.bas")),
+            ("LED Chaser Patterns", "Advanced",     "8 LEDs on GPIO5-26",
+             Language::Basic, include_str!("../../../Examples/projects/zero/09_led_chaser.bas")),
+            ("Turtle Art + GPIO",   "Advanced",     "4 LEDs on GPIO17/22/27/5",
+             Language::Logo,  include_str!("../../../Examples/projects/zero/10_logo_gpio_art.logo")),
+        ],
+        Board::PiZero2W => vec![
+            ("Blink LED",              "Beginner",     "LED + 330Ω on GPIO17",
+             Language::Basic, include_str!("../../../Examples/projects/zero2w/01_blink_led.bas")),
+            ("Button Debounce",        "Beginner",     "Button GPIO27, LED GPIO17",
+             Language::Basic, include_str!("../../../Examples/projects/zero2w/02_button_debounce.bas")),
+            ("RGB Colour Mixer",       "Intermediate", "RGB LED (common cathode)",
+             Language::Basic, include_str!("../../../Examples/projects/zero2w/03_rgb_colour_mixer.bas")),
+            ("Smart Traffic Light",    "Intermediate", "3 LEDs + pedestrian button",
+             Language::Basic, include_str!("../../../Examples/projects/zero2w/04_smart_traffic_light.bas")),
+            ("Robotic Arm",            "Advanced",     "3 servos (base/shoulder/grip)",
+             Language::Basic, include_str!("../../../Examples/projects/zero2w/05_robotic_arm.bas")),
+            ("Environment Monitor",    "Advanced",     "3 LEDs (green/amber/red)",
+             Language::Basic, include_str!("../../../Examples/projects/zero2w/06_environment_monitor.bas")),
+            ("VU Meter Bar Graph",     "Intermediate", "8 LEDs for bar graph",
+             Language::Basic, include_str!("../../../Examples/projects/zero2w/07_vu_meter.bas")),
+            ("Smart Home Lights",      "Advanced",     "4 PWM LEDs (room lights)",
+             Language::Basic, include_str!("../../../Examples/projects/zero2w/08_smart_home_lights.bas")),
+            ("Morse Code Transmitter", "Advanced",     "LED GPIO17, Buzzer GPIO18",
+             Language::Basic, include_str!("../../../Examples/projects/zero2w/09_morse_code.bas")),
+            ("Drawing Robot",          "Advanced",     "2 DC motors via H-bridge",
+             Language::Logo,  include_str!("../../../Examples/projects/zero2w/10_drawing_robot.logo")),
+        ],
+        // For Pi4, Pi5, Simulator — show all boards' projects as suggestions
+        _ => vec![],
+    }
+}
