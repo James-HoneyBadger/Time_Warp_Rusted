@@ -192,9 +192,33 @@ fn c_declare(ctx: &mut ExecContext, line: &str) -> ControlFlow {
     }
     // Also skip pointer asterisks
     let rest = rest.trim_start_matches('*').trim();
-    // Handle function definitions like `main() {` — just skip them
+    // Handle function definitions like `main() {` or `factorial(int n) {`
     if rest.contains('(') {
-        return ControlFlow::Continue;
+        let func_name = rest.split('(').next().unwrap_or("").trim().to_uppercase();
+        if func_name == "MAIN" || func_name.is_empty() {
+            return ControlFlow::Continue; // main — let body execute normally
+        }
+        // Non-main function — collect body and store as subroutine
+        let params = c_extract_func_params(rest);
+        let start = ctx.line_idx + 1;
+        let mut body = Vec::new();
+        let mut depth = 1i32;
+        let mut end_idx = ctx.program_lines.len();
+        for i in start..ctx.program_lines.len() {
+            let t = ctx.program_lines[i].1.trim().to_string();
+            for ch in t.chars() {
+                if ch == '{' { depth += 1; }
+                if ch == '}' { depth -= 1; }
+            }
+            if depth <= 0 { end_idx = i; break; }
+            body.push(t);
+        }
+        ctx.subs.insert(func_name.clone(), crate::context::SubDef {
+            name: func_name,
+            params,
+            body_lines: body,
+        });
+        return ControlFlow::Jump(end_idx + 1);
     }
     // Multiple declarations: int a, b = 5, c;
     for decl in rest.split(',') {
@@ -235,7 +259,7 @@ fn c_printf(ctx: &mut ExecContext, line: &str) -> ControlFlow {
     }
 
     let fmt = args[0].trim().trim_matches('"');
-    let vals: Vec<f64> = args[1..].iter().map(|a| ctx.eval_f64(a.trim())).collect();
+    let vals: Vec<f64> = args[1..].iter().map(|a| c_eval_f64(ctx, a.trim())).collect();
     let val_strs: Vec<String> = args[1..]
         .iter()
         .map(|a| {
@@ -245,7 +269,7 @@ fn c_printf(ctx: &mut ExecContext, line: &str) -> ControlFlow {
             } else {
                 let sv = ctx.get_str(a);
                 if !sv.is_empty() { sv } else {
-                    let v = ctx.eval_f64(a);
+                    let v = c_eval_f64(ctx, a);
                     if v == v.floor() && v.abs() < 1e15 { format!("{}", v as i64) }
                     else { format!("{v}") }
                 }
@@ -396,7 +420,7 @@ fn c_call(ctx: &mut ExecContext, line: &str) -> ControlFlow {
         let args_str = extract_call_args(line);
         let args: Vec<f64> = split_call_args(&args_str)
             .iter()
-            .map(|a| ctx.eval_f64(a.trim()))
+            .map(|a| c_eval_f64(ctx, a.trim()))
             .collect();
 
         // Built-in math functions
@@ -413,6 +437,13 @@ fn c_call(ctx: &mut ExecContext, line: &str) -> ControlFlow {
         };
         if let Some(v) = result {
             ctx.set_var("RETURN", v);
+            return ControlFlow::Continue;
+        }
+
+        // User-defined function
+        if ctx.subs.contains_key(&name) {
+            let ret = exec_user_func(ctx, &name, &args);
+            ctx.set_var("RETURN", ret);
         }
     }
     ControlFlow::Continue
@@ -422,9 +453,24 @@ fn c_call(ctx: &mut ExecContext, line: &str) -> ControlFlow {
 
 fn c_if(ctx: &mut ExecContext, line: &str) -> ControlFlow {
     let cond_str = extract_paren_expr(line, 2);
-    let val = ctx.eval_f64(&cond_str);
+    let val = c_eval_f64(ctx, &cond_str);
+
+    // Check for inline statement (no braces): `if (cond) statement;`
+    let after = after_close_paren(line, 2);
+    let inline_stmt = after.trim().trim_end_matches(';').trim();
+    let has_brace = after.contains('{');
+
+    if !inline_stmt.is_empty() && !has_brace {
+        // Inline if — no block
+        if val != 0.0 {
+            return execute_c(ctx, inline_stmt);
+        } else {
+            return ControlFlow::Continue;
+        }
+    }
+
+    // Block if: `if (cond) {`
     if val == 0.0 {
-        // Condition false — skip to matching `} else {` or end of block
         c_skip_to_else_or_end(ctx)
     } else {
         ControlFlow::Continue
@@ -506,32 +552,69 @@ fn c_skip_block(ctx: &ExecContext) -> ControlFlow {
     ControlFlow::End
 }
 
-/// Skip to `} else {` or end of block.
+/// Skip to `} else {`, `} else if (cond) {`, or end of block.
 fn c_skip_to_else_or_end(ctx: &ExecContext) -> ControlFlow {
     let mut depth = 1i32;
-    for i in ctx.line_idx + 1..ctx.program_lines.len() {
-        let (_, ref line) = ctx.program_lines[i];
-        let t = line.trim();
+    let mut i = ctx.line_idx + 1;
+    while i < ctx.program_lines.len() {
+        let t = ctx.program_lines[i].1.trim().to_string();
+        let upper = t.to_uppercase();
+
+        let mut hit_zero = false;
         for ch in t.chars() {
             if ch == '{' { depth += 1; }
-            if ch == '}' { depth -= 1; }
+            if ch == '}' {
+                depth -= 1;
+                if depth == 0 { hit_zero = true; }
+            }
         }
-        if depth == 0 {
-            // Check if this line or the next is `else`
-            let upper = t.to_uppercase();
+
+        if hit_zero && depth > 0 {
+            // Line like `} else if (...) {` or `} else {` (depth passed through 0, reopened)
+            if upper.contains("ELSE IF") {
+                if let Some(eif_pos) = upper.find("ELSE IF") {
+                    let if_part = &t[eif_pos + 5..]; // get "if (...) {"
+                    let cond_str = extract_paren_expr(if_part, 2);
+                    let val = ctx.eval_f64(&cond_str);
+                    if val != 0.0 {
+                        return ControlFlow::Jump(i + 1); // enter this else-if block
+                    }
+                    // Condition false — continue scanning for next else
+                    i += 1;
+                    continue;
+                }
+            } else if upper.contains("ELSE") {
+                return ControlFlow::Jump(i + 1); // enter else body
+            }
+        } else if depth <= 0 {
+            // Closing `}` at our level
             if upper.contains("ELSE") {
-                // Jump to after the `else {` — the else block
                 return ControlFlow::Jump(i + 1);
             }
-            // Check the next line for `else`
+            // Check next line for separate else / else if
             if i + 1 < ctx.program_lines.len() {
-                let next = ctx.program_lines[i + 1].1.trim().to_uppercase();
-                if next.starts_with("ELSE") || next.starts_with("} ELSE") {
-                    return ControlFlow::Jump(i + 2); // skip the `else {` line
+                let next_text = ctx.program_lines[i + 1].1.trim().to_string();
+                let next_up = next_text.to_uppercase();
+                if next_up.starts_with("ELSE IF") {
+                    let if_pos = next_up.find("IF").unwrap_or(0);
+                    let if_part = &next_text[if_pos..];
+                    let cond_str = extract_paren_expr(if_part, 2);
+                    let val = ctx.eval_f64(&cond_str);
+                    if val != 0.0 {
+                        return ControlFlow::Jump(i + 2); // enter else-if body
+                    }
+                    // Condition false — skip past the else-if `{` and keep scanning
+                    depth = 1;
+                    i += 2;
+                    continue;
+                } else if next_up.starts_with("ELSE") || next_up.starts_with("} ELSE") {
+                    return ControlFlow::Jump(i + 2);
                 }
             }
             return ControlFlow::Jump(i + 1);
         }
+
+        i += 1;
     }
     ControlFlow::End
 }
@@ -551,6 +634,140 @@ fn extract_paren_expr(line: &str, keyword_len: usize) -> String {
         }
     }
     String::new()
+}
+
+// ── user-defined function support ─────────────────────────────────────────────
+
+/// Execute a user-defined C function and return its result.
+/// Saves and restores the full program execution state so that loops,
+/// if/else, and other control flow work correctly inside function bodies.
+fn exec_user_func(ctx: &mut ExecContext, name: &str, args: &[f64]) -> f64 {
+    let sub = match ctx.subs.get(name).cloned() {
+        Some(s) => s,
+        None => return 0.0,
+    };
+    // Save current parameter values, set new ones
+    let saved_params: Vec<(String, f64)> = sub.params.iter().enumerate().map(|(i, p)| {
+        let old = ctx.get_var(p);
+        ctx.set_var(p, args.get(i).copied().unwrap_or(0.0));
+        (p.clone(), old)
+    }).collect();
+
+    // Save execution state
+    let saved_lines = std::mem::take(&mut ctx.program_lines);
+    let saved_idx = ctx.line_idx;
+    let saved_while = std::mem::take(&mut ctx.while_stack);
+    let saved_for = std::mem::take(&mut ctx.for_stack);
+
+    // Load function body as program
+    ctx.program_lines = sub.body_lines.iter().enumerate()
+        .map(|(i, line)| ((i + 1) as u32, line.clone()))
+        .collect();
+    ctx.line_idx = 0;
+
+    ctx.set_var("RETURN", 0.0);
+    let mut steps = 0u64;
+    while ctx.line_idx < ctx.program_lines.len() && steps < 100_000 {
+        let (_, line_text) = ctx.program_lines[ctx.line_idx].clone();
+        let cf = execute_c(ctx, &line_text);
+        steps += 1;
+        match cf {
+            ControlFlow::Continue => { ctx.line_idx += 1; }
+            ControlFlow::Jump(idx) => { ctx.line_idx = idx; }
+            ControlFlow::Return | ControlFlow::End => break,
+            _ => { ctx.line_idx += 1; }
+        }
+    }
+    let ret = ctx.get_var("RETURN");
+
+    // Restore execution state
+    ctx.program_lines = saved_lines;
+    ctx.line_idx = saved_idx;
+    ctx.while_stack = saved_while;
+    ctx.for_stack = saved_for;
+
+    // Restore parameters
+    for (p, v) in saved_params { ctx.set_var(&p, v); }
+    ret
+}
+
+/// Evaluate a C expression, pre-processing any user-defined function calls.
+fn c_eval_f64(ctx: &mut ExecContext, expr: &str) -> f64 {
+    let processed = c_resolve_func_calls(ctx, expr);
+    ctx.eval_f64(&processed)
+}
+
+/// Replace user-defined function calls in an expression with their return values.
+fn c_resolve_func_calls(ctx: &mut ExecContext, expr: &str) -> String {
+    let sub_names: Vec<String> = ctx.subs.keys().cloned().collect();
+    if sub_names.is_empty() { return expr.to_string(); }
+    let mut result = expr.to_string();
+    for name in &sub_names {
+        loop {
+            let upper_result = result.to_uppercase();
+            let pos = match upper_result.find(name.as_str()) {
+                Some(p) => p,
+                None => break,
+            };
+            let after_name = &result[pos + name.len()..];
+            if !after_name.trim_start().starts_with('(') { break; }
+            let open = pos + name.len() + after_name.find('(').unwrap();
+            let mut depth = 0i32;
+            let mut close = open;
+            for (j, ch) in result[open..].char_indices() {
+                if ch == '(' { depth += 1; }
+                if ch == ')' { depth -= 1; }
+                if depth == 0 { close = open + j; break; }
+            }
+            let args_str = result[open+1..close].to_string();
+            let args: Vec<f64> = if args_str.trim().is_empty() {
+                vec![]
+            } else {
+                split_call_args(&args_str).iter().map(|a| c_eval_f64(ctx, a.trim())).collect()
+            };
+            let ret = exec_user_func(ctx, name, &args);
+            let val_str = if ret == ret.floor() && ret.abs() < 1e15 {
+                format!("{}", ret as i64)
+            } else {
+                format!("{ret}")
+            };
+            result = format!("{}{}{}", &result[..pos], val_str, &result[close+1..]);
+        }
+    }
+    result
+}
+
+/// Extract parameter names from a C function signature like `factorial(int n)`.
+fn c_extract_func_params(sig: &str) -> Vec<String> {
+    let start = match sig.find('(') { Some(p) => p + 1, None => return vec![] };
+    let end = match sig.rfind(')') { Some(p) => p, None => return vec![] };
+    if start >= end { return vec![]; }
+    let inner = &sig[start..end];
+    inner.split(',')
+        .filter_map(|p| {
+            let p = p.trim();
+            if p.is_empty() || p.to_uppercase() == "VOID" { return None; }
+            p.split_whitespace().last().map(|s| s.trim_start_matches('*').to_uppercase())
+        })
+        .filter(|s| !s.is_empty())
+        .collect()
+}
+
+/// Return the text after the closing `)` of a parenthesized expression.
+fn after_close_paren(line: &str, keyword_len: usize) -> &str {
+    let rest = &line[keyword_len..];
+    if let Some(open) = rest.find('(') {
+        let after = &rest[open + 1..];
+        let mut depth = 1i32;
+        for (j, ch) in after.char_indices() {
+            if ch == '(' { depth += 1; }
+            if ch == ')' { depth -= 1; }
+            if depth == 0 {
+                return &after[j+1..];
+            }
+        }
+    }
+    ""
 }
 
 // ── utility ───────────────────────────────────────────────────────────────────
