@@ -1089,4 +1089,139 @@ end.
         assert!(matches!(state, RunState::Finished), "state={state:?}");
         assert!(out.contains("Value: 99"), "Expected 'Value: 99' in output, got: {out:?}");
     }
+
+    // ── Multi-line IF / ELSE / END IF tests ───────────────────────────────
+
+    #[test]
+    fn basic_block_if_true_branch() {
+        let source = r#"10 LET X = 10
+20 IF X > 5 THEN
+30     PRINT "Big"
+40 ELSE
+50     PRINT "Small"
+60 END IF
+70 PRINT "Done"
+80 END
+"#;
+        let (out, state) = run_to_completion(Language::Basic, source);
+        assert!(matches!(state, RunState::Finished), "state={state:?}");
+        assert!(out.contains("Big"), "Expected 'Big', got: {out:?}");
+        assert!(!out.contains("Small"), "Should NOT contain 'Small', got: {out:?}");
+        assert!(out.contains("Done"), "Expected 'Done', got: {out:?}");
+    }
+
+    #[test]
+    fn basic_block_if_false_branch() {
+        let source = r#"10 LET X = 2
+20 IF X > 5 THEN
+30     PRINT "Big"
+40 ELSE
+50     PRINT "Small"
+60 END IF
+70 PRINT "Done"
+80 END
+"#;
+        let (out, state) = run_to_completion(Language::Basic, source);
+        assert!(matches!(state, RunState::Finished), "state={state:?}");
+        assert!(!out.contains("Big"), "Should NOT contain 'Big', got: {out:?}");
+        assert!(out.contains("Small"), "Expected 'Small', got: {out:?}");
+        assert!(out.contains("Done"), "Expected 'Done', got: {out:?}");
+    }
+
+    #[test]
+    fn basic_nested_block_if() {
+        let source = r#"10 LET A = 1
+20 LET B = 0
+30 IF A = 1 THEN
+40     IF B = 1 THEN
+50         PRINT "Both"
+60     ELSE
+70         PRINT "OnlyA"
+80     END IF
+90 ELSE
+100    PRINT "Neither"
+110 END IF
+120 END
+"#;
+        let (out, state) = run_to_completion(Language::Basic, source);
+        assert!(matches!(state, RunState::Finished), "state={state:?}");
+        assert!(out.contains("OnlyA"), "Expected 'OnlyA', got: {out:?}");
+        assert!(!out.contains("Both"), "Should NOT contain 'Both', got: {out:?}");
+        assert!(!out.contains("Neither"), "Should NOT contain 'Neither', got: {out:?}");
+    }
+
+    #[test]
+    fn basic_randomize_and_rnd() {
+        let source = r#"10 RANDOMIZE TIMER
+20 LET X = INT(RND * 100) + 1
+30 PRINT X
+40 END
+"#;
+        let (out, state) = run_to_completion(Language::Basic, source);
+        assert!(matches!(state, RunState::Finished), "state={state:?}");
+        // X should be between 1 and 100; output should not contain "Unknown"
+        assert!(!out.contains("Unknown"), "RANDOMIZE should not be unknown, got: {out:?}");
+    }
+
+    #[test]
+    fn basic_str_dollar_function() {
+        let source = r#"10 LET N = 42
+20 LET S$ = "Value: " + STR$(N)
+30 PRINT S$
+40 END
+"#;
+        let (out, state) = run_to_completion(Language::Basic, source);
+        assert!(matches!(state, RunState::Finished), "state={state:?}");
+        assert!(out.contains("Value: 42"), "Expected 'Value: 42', got: {out:?}");
+    }
+
+    #[test]
+    fn basic_guessing_game_single_round() {
+        // Simplified version: test that multi-line IF works with INPUT
+        let source = r#"10 LET SECRET = 50
+20 LET TRIES = 0
+30 INPUT GUESS
+40 TRIES = TRIES + 1
+50 IF GUESS = SECRET THEN
+60     PRINT "Correct in "; STR$(TRIES); " tries"
+70 ELSE
+80     IF GUESS < SECRET THEN
+90         PRINT "Too low"
+100    ELSE
+110        PRINT "Too high"
+120    END IF
+130 END IF
+140 END
+"#;
+        let (out, state) = run_with_input(Language::Basic, source, &["50"]);
+        assert!(matches!(state, RunState::Finished), "state={state:?}");
+        assert!(out.contains("Correct"), "Expected 'Correct', got: {out:?}");
+        assert!(out.contains("1"), "Expected try count '1', got: {out:?}");
+        assert!(!out.contains("Too low"), "Should NOT print 'Too low', got: {out:?}");
+        assert!(!out.contains("Too high"), "Should NOT print 'Too high', got: {out:?}");
+    }
+
+    #[test]
+    fn basic_guessing_game_wrong_guess() {
+        let source = r#"10 LET SECRET = 50
+20 LET TRIES = 0
+30 INPUT GUESS
+40 TRIES = TRIES + 1
+50 IF GUESS = SECRET THEN
+60     PRINT "Correct"
+70 ELSE
+80     IF GUESS < SECRET THEN
+90         PRINT "Too low"
+100    ELSE
+110        PRINT "Too high"
+120    END IF
+130 END IF
+140 END
+"#;
+        let (out, state) = run_with_input(Language::Basic, source, &["25"]);
+        assert!(matches!(state, RunState::Finished), "state={state:?}");
+        assert!(out.contains("Too low"), "Expected 'Too low', got: {out:?}");
+        assert!(!out.contains("Correct"), "Should NOT print 'Correct', got: {out:?}");
+        assert!(!out.contains("Too high"), "Should NOT print 'Too high', got: {out:?}");
+    }
 }

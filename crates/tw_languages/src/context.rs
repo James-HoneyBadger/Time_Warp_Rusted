@@ -162,6 +162,12 @@ pub struct ExecContext {
     pub select_val:       Option<f64>,
     pub in_select:        bool,
     pub select_matched:   bool,
+
+    // ── Multi-line IF/THEN/ELSE/END IF ───────────────────────────────────
+    /// Stack for block-IF tracking.  Each entry = "currently executing body".
+    /// When any entry is `false`, lines are skipped until the matching
+    /// `ELSE` or `END IF` flips / pops it.
+    pub if_block_stack:   Vec<bool>,
 }
 
 impl Default for ExecContext {
@@ -201,6 +207,7 @@ impl Default for ExecContext {
             select_val:           None,
             in_select:            false,
             select_matched:       false,
+            if_block_stack:       Vec::new(),
         }
     }
 }
@@ -536,5 +543,6 @@ impl ExecContext {
         self.select_val = None;
         self.in_select = false;
         self.select_matched = false;
+        self.if_block_stack.clear();
     }
 }

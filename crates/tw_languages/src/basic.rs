@@ -16,6 +16,55 @@ pub fn execute_basic(ctx: &mut ExecContext, command: &str) -> ControlFlow {
         return ControlFlow::Continue;
     }
 
+    let cmd_up = command.to_uppercase();
+    let cmd_up_str = cmd_up.as_str();
+
+    // ── Multi-line IF block tracking ──────────────────────────────────────
+    // Structural keywords (IF/ELSE/END IF/ELSEIF) must always be processed
+    // so the block stack stays balanced, even inside skipped regions.
+    let skipping = !ctx.if_block_stack.is_empty()
+        && !ctx.if_block_stack.iter().all(|b| *b);
+
+    if cmd_up_str == "END IF" || cmd_up_str == "ENDIF" {
+        ctx.if_block_stack.pop();
+        return ControlFlow::Continue;
+    }
+    if cmd_up_str == "ELSE" || cmd_up_str.starts_with("ELSE ") {
+        // Toggle top of stack, but only if the parent is executing.
+        let parent_ok = ctx.if_block_stack.len() <= 1
+            || ctx.if_block_stack[..ctx.if_block_stack.len() - 1].iter().all(|b| *b);
+        if parent_ok {
+            if let Some(top) = ctx.if_block_stack.last_mut() {
+                *top = !*top;
+            }
+        }
+        // If the "ELSE" carries an IF (ELSEIF), process the inline IF
+        if cmd_up_str.starts_with("ELSE IF ")
+            || cmd_up_str.starts_with("ELSEIF ")
+        {
+            // Pop the current block (ELSE ends the previous IF)
+            ctx.if_block_stack.pop();
+            // Re-enter as a new IF
+            let if_part = if cmd_up_str.starts_with("ELSEIF ") {
+                &command[7..]
+            } else {
+                &command[8..]
+            };
+            return basic_if_block(ctx, if_part.trim());
+        }
+        return ControlFlow::Continue;
+    }
+
+    // If we're inside a skipped block, only count nested IFs for depth tracking
+    if skipping {
+        if cmd_up_str.starts_with("IF ") && is_block_if(&cmd_up) {
+            ctx.if_block_stack.push(false); // nested skip
+        }
+        return ControlFlow::Continue;
+    }
+
+    // ── Normal execution (not skipping) ──────────────────────────────────
+
     // Ignore label-only lines (e.g. `100:` or `MYLOOP:`)
     if command.ends_with(':') && !command.contains(' ') {
         return ControlFlow::Continue;
@@ -26,10 +75,10 @@ pub fn execute_basic(ctx: &mut ExecContext, command: &str) -> ControlFlow {
         return exec_multi(ctx, command);
     }
 
-    let cmd_up = command.to_uppercase();
-    let cmd_up = cmd_up.as_str();
-
     // ── Comments ──────────────────────────────────────────────────────────
+    // Re-alias for the rest of the function (formerly a local `let cmd_up`).
+    let cmd_up = cmd_up_str;
+
     if cmd_up.starts_with("REM") || cmd_up.starts_with("'") {
         return ControlFlow::Continue;
     }
@@ -47,7 +96,12 @@ pub fn execute_basic(ctx: &mut ExecContext, command: &str) -> ControlFlow {
 
     // ── IF ────────────────────────────────────────────────────────────────
     if cmd_up.starts_with("IF ") {
-        return basic_if(ctx, command[3..].trim());
+        let rest = command[3..].trim();
+        // Check for multi-line block IF (nothing after THEN)
+        if is_block_if(&cmd_up) {
+            return basic_if_block(ctx, rest);
+        }
+        return basic_if(ctx, rest);
     }
 
     // ── GOTO / GOSUB / RETURN ────────────────────────────────────────────
@@ -64,7 +118,8 @@ pub fn execute_basic(ctx: &mut ExecContext, command: &str) -> ControlFlow {
     }
 
     // ── END ───────────────────────────────────────────────────────────────
-    if cmd_up == "END" || cmd_up.starts_with("END ") {
+    // Pure END (program termination) — do not match END IF / END SUB / etc.
+    if cmd_up == "END" {
         return ControlFlow::End;
     }
 
@@ -233,6 +288,13 @@ pub fn execute_basic(ctx: &mut ExecContext, command: &str) -> ControlFlow {
         return ControlFlow::Continue; // no-op; we don't block the UI thread
     }
 
+    // ── RANDOMIZE ─────────────────────────────────────────────────────────
+    // RANDOMIZE [TIMER] — seed the RNG.  Our RNG is already time-seeded,
+    // so this is a no-op.
+    if cmd_up.starts_with("RANDOMIZE") {
+        return ControlFlow::Continue;
+    }
+
     // ── SOUND / BEEP ─────────────────────────────────────────────────────
     if cmd_up.starts_with("SOUND") || cmd_up == "BEEP" {
         return ControlFlow::Continue;
@@ -393,6 +455,9 @@ fn basic_print(ctx: &mut ExecContext, args: &str) -> ControlFlow {
         } else if part.to_uppercase().ends_with('$') {
             // String variable (NAME$) — resolve as string, not numeric.
             out.push_str(&ctx.get_str(part));
+        } else if is_string_func(part) {
+            // String function call: STR$(), CHR$(), LEFT$(), RIGHT$(), MID$()
+            out.push_str(&eval_string(ctx, part));
         } else {
             // Try numeric expression
             match ctx.eval_expr(part) {
@@ -419,6 +484,14 @@ fn basic_print(ctx: &mut ExecContext, args: &str) -> ControlFlow {
     if end_with_newline { out.push('\n'); }
     ctx.emit(&out);
     ControlFlow::Continue
+}
+
+/// Check if a PRINT part is a BASIC string function call (STR$, CHR$, etc.)
+fn is_string_func(part: &str) -> bool {
+    let up = part.trim().to_uppercase();
+    up.starts_with("STR$(") || up.starts_with("CHR$(")
+        || up.starts_with("LEFT$(") || up.starts_with("RIGHT$(")
+        || up.starts_with("MID$(")
 }
 
 fn split_print_args(args: &str) -> Vec<&str> {
@@ -501,6 +574,31 @@ fn basic_if(ctx: &mut ExecContext, args: &str) -> ControlFlow {
             return execute_basic(ctx, &ep);
         }
     }
+    ControlFlow::Continue
+}
+
+/// Detect multi-line block IF: `IF cond THEN` with nothing meaningful after THEN.
+fn is_block_if(cmd_up: &str) -> bool {
+    if let Some(pos) = cmd_up.find("THEN") {
+        let after = cmd_up[pos + 4..].trim();
+        after.is_empty()
+    } else {
+        false
+    }
+}
+
+/// Handle a multi-line block IF.  Evaluates the condition and pushes the result
+/// onto `if_block_stack`.  The subsequent lines will be executed or skipped
+/// depending on the condition; `ELSE` flips the decision, `END IF` pops the stack.
+fn basic_if_block(ctx: &mut ExecContext, args: &str) -> ControlFlow {
+    let upper = args.to_uppercase();
+    let cond_str = if let Some(pos) = find_keyword(&upper, "THEN") {
+        &args[..pos]
+    } else {
+        args
+    };
+    let cond_val = ctx.eval_f64(cond_str.trim());
+    ctx.if_block_stack.push(cond_val != 0.0);
     ControlFlow::Continue
 }
 
@@ -613,8 +711,63 @@ fn eval_string(ctx: &ExecContext, expr: &str) -> String {
     if expr.starts_with('"') && expr.ends_with('"') && expr.len() >= 2 {
         return expr[1..expr.len()-1].to_string();
     }
-    // String variable
+
+    // ── BASIC string functions ────────────────────────────────────────────
     let upper = expr.to_uppercase();
+    // STR$(expr)  — convert number to string
+    if upper.starts_with("STR$(") && upper.ends_with(')') {
+        let inner = &expr[5..expr.len()-1];
+        let v = ctx.eval_f64(inner);
+        return if v == v.floor() && v.abs() < 1e15 {
+            format!("{}", v as i64)
+        } else {
+            format!("{v}")
+        };
+    }
+    // CHR$(n)  — ASCII code to character
+    if upper.starts_with("CHR$(") && upper.ends_with(')') {
+        let inner = &expr[5..expr.len()-1];
+        let code = ctx.eval_f64(inner) as u8;
+        return String::from(code as char);
+    }
+    // LEFT$(str, n)
+    if upper.starts_with("LEFT$(") && upper.ends_with(')') {
+        let inner = &expr[6..expr.len()-1];
+        if let Some(comma) = inner.rfind(',') {
+            let s = eval_string(ctx, inner[..comma].trim());
+            let n = ctx.eval_f64(inner[comma+1..].trim()) as usize;
+            return s.chars().take(n).collect();
+        }
+    }
+    // RIGHT$(str, n)
+    if upper.starts_with("RIGHT$(") && upper.ends_with(')') {
+        let inner = &expr[7..expr.len()-1];
+        if let Some(comma) = inner.rfind(',') {
+            let s = eval_string(ctx, inner[..comma].trim());
+            let n = ctx.eval_f64(inner[comma+1..].trim()) as usize;
+            let chars: Vec<char> = s.chars().collect();
+            let start = chars.len().saturating_sub(n);
+            return chars[start..].iter().collect();
+        }
+    }
+    // MID$(str, start [, length])
+    if upper.starts_with("MID$(") && upper.ends_with(')') {
+        let inner = &expr[5..expr.len()-1];
+        let parts: Vec<&str> = inner.splitn(3, ',').collect();
+        if parts.len() >= 2 {
+            let s = eval_string(ctx, parts[0].trim());
+            let start = (ctx.eval_f64(parts[1].trim()) as usize).saturating_sub(1); // 1-based
+            let chars: Vec<char> = s.chars().collect();
+            if parts.len() == 3 {
+                let len = ctx.eval_f64(parts[2].trim()) as usize;
+                return chars.iter().skip(start).take(len).collect();
+            } else {
+                return chars.iter().skip(start).collect();
+            }
+        }
+    }
+
+    // String variable
     if let Some(sv) = ctx.string_vars.get(&upper) {
         return sv.clone();
     }
