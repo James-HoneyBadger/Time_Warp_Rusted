@@ -19,14 +19,13 @@ use crate::{
     themes::ThemeManager,
 };
 
-// ── split orientation ─────────────────────────────────────────────────────────
+// ── central tab ───────────────────────────────────────────────────────────────
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-enum CanvasSplit {
-    Horizontal,
-    Vertical,
-    EditorOnly,
-    CanvasOnly,
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum CentralTab {
+    Editor,
+    Output,
+    Canvas,
 }
 
 // ── Panel size configuration ──────────────────────────────────────────────────
@@ -34,10 +33,6 @@ enum CanvasSplit {
 /// User-configurable panel sizes.
 struct PanelSizes {
     left_panel_width:  f32,
-    canvas_width:      f32,
-    canvas_height:     f32,
-    output_height:     f32,
-    right_panel_width: f32,
     input_height:      f32,
 }
 
@@ -45,10 +40,6 @@ impl Default for PanelSizes {
     fn default() -> Self {
         Self {
             left_panel_width:  240.0,
-            canvas_width:      400.0,
-            canvas_height:     300.0,
-            output_height:     250.0,
-            right_panel_width: 500.0,
             input_height:      150.0,
         }
     }
@@ -64,7 +55,7 @@ pub struct TimeWarpApp {
     canvas:            TurtleCanvas,
     debug_panel:       DebugPanel,
     feature_pane:      FeaturePanels,
-    split:             CanvasSplit,
+    active_tab:        CentralTab,
     left_panel:        bool,
     debug_mode:        bool,
     input_buf:         String,
@@ -108,7 +99,7 @@ impl TimeWarpApp {
             canvas:       TurtleCanvas::new(),
             debug_panel:  DebugPanel::new(),
             feature_pane: FeaturePanels::new(),
-            split:        CanvasSplit::Horizontal,
+            active_tab:   CentralTab::Editor,
             left_panel:   true,
             debug_mode:   false,
             input_buf:    String::new(),
@@ -187,6 +178,16 @@ impl TimeWarpApp {
         // Ctrl+Shift+S — Save As
         if ctx.input_mut(|i| i.consume_key(Modifiers::CTRL | Modifiers::SHIFT, Key::S)) {
             self.action_save_as();
+        }
+        // Ctrl+1/2/3 — Switch tabs
+        if ctx.input_mut(|i| i.consume_key(Modifiers::CTRL, Key::Num1)) {
+            self.active_tab = CentralTab::Editor;
+        }
+        if ctx.input_mut(|i| i.consume_key(Modifiers::CTRL, Key::Num2)) {
+            self.active_tab = CentralTab::Output;
+        }
+        if ctx.input_mut(|i| i.consume_key(Modifiers::CTRL, Key::Num3)) {
+            self.active_tab = CentralTab::Canvas;
         }
         // Ctrl+Z — Undo
         if ctx.input_mut(|i| i.consume_key(Modifiers::CTRL, Key::Z)) {
@@ -404,6 +405,16 @@ impl TimeWarpApp {
         // Switch to Output tab so the user can see results
         if !text.is_empty() && !matches!(self.interpreter.state, RunState::Error(_)) {
             self.output.active_tab = crate::output_panel::OutputTab::Output;
+            // Auto-switch to Output tab if we have text and we're on the editor
+            if self.active_tab == CentralTab::Editor {
+                self.active_tab = CentralTab::Output;
+            }
+        }
+        // If there are graphics, hint the user by switching to canvas
+        let has_gfx = !self.interpreter.ctx.turtle.lines.is_empty()
+            || !self.interpreter.ctx.turtle.shapes.is_empty();
+        if has_gfx && self.active_tab == CentralTab::Editor {
+            self.active_tab = CentralTab::Canvas;
         }
         self.output.set(text);
     }
@@ -628,15 +639,15 @@ impl TimeWarpApp {
                     }
                     ui.checkbox(&mut self.iot_panel_open, "IoT Panel");
                     ui.separator();
-                    for (label, split) in [
-                        ("⬛ Horizontal split",   CanvasSplit::Horizontal),
-                        ("⬜ Vertical split",     CanvasSplit::Vertical),
-                        ("📝 Editor only",        CanvasSplit::EditorOnly),
-                        ("🖼 Canvas only",         CanvasSplit::CanvasOnly),
+                    ui.label("Active Tab:");
+                    for (label, tab) in [
+                        ("📝 Code Editor",         CentralTab::Editor),
+                        ("📄 Text Output",         CentralTab::Output),
+                        ("🖼 Graphics Canvas",      CentralTab::Canvas),
                     ] {
-                        let sel = self.split == split;
+                        let sel = self.active_tab == tab;
                         if ui.selectable_label(sel, label).clicked() {
-                            self.split = split;
+                            self.active_tab = tab;
                             ui.close_menu();
                         }
                     }
@@ -854,7 +865,7 @@ impl TimeWarpApp {
         TopBottomPanel::bottom("status_bar").show(ctx, |ui| {
             ui.horizontal(|ui| {
                 // Build marker — proves the user is running the latest code
-                ui.label("[b6-iot]");
+                ui.label("[b7-tabs]");
                 ui.separator();
                 let file_str = self.current_file.as_ref()
                     .map(|p| p.display().to_string())
@@ -906,22 +917,6 @@ impl TimeWarpApp {
                 ui.horizontal(|ui| {
                     ui.label("Left panel width:");
                     ui.add(egui::Slider::new(&mut self.panel_sizes.left_panel_width, 120.0..=500.0).suffix(" px"));
-                });
-                ui.horizontal(|ui| {
-                    ui.label("Canvas width:");
-                    ui.add(egui::Slider::new(&mut self.panel_sizes.canvas_width, 200.0..=1200.0).suffix(" px"));
-                });
-                ui.horizontal(|ui| {
-                    ui.label("Canvas height:");
-                    ui.add(egui::Slider::new(&mut self.panel_sizes.canvas_height, 100.0..=800.0).suffix(" px"));
-                });
-                ui.horizontal(|ui| {
-                    ui.label("Output height:");
-                    ui.add(egui::Slider::new(&mut self.panel_sizes.output_height, 80.0..=600.0).suffix(" px"));
-                });
-                ui.horizontal(|ui| {
-                    ui.label("Right panel width:");
-                    ui.add(egui::Slider::new(&mut self.panel_sizes.right_panel_width, 200.0..=1000.0).suffix(" px"));
                 });
                 ui.horizontal(|ui| {
                     ui.label("Input area height:");
@@ -1305,75 +1300,84 @@ impl TimeWarpApp {
         }
     }
 
-    // ── central workspace ─────────────────────────────────────────────────
+    // ── central workspace (tabbed) ──────────────────────────────────────
 
     fn central(&mut self, ctx: &Context) {
         let theme = self.themes.current().clone();
-        let ps = &self.panel_sizes;
 
-        match self.split {
-            // ── Horizontal: editor on top, canvas+output on the bottom ──────
-            CanvasSplit::Horizontal => {
-                TopBottomPanel::bottom("h_bottom")
-                    .resizable(true)
-                    .min_height(80.0)
-                    .default_height(ps.canvas_height)
-                    .show(ctx, |ui| {
-                        ui.visuals_mut().extreme_bg_color = theme.editor_bg();
-                        egui::SidePanel::left("h_canvas")
-                            .resizable(true)
-                            .min_width(80.0)
-                            .default_width(ps.canvas_width)
-                            .show_inside(ui, |ui| {
-                                self.canvas.show(ui, &self.interpreter.ctx.turtle);
-                            });
-                        self.output.show(ui, &theme);
-                    });
-                CentralPanel::default().show(ctx, |ui| {
-                    ui.visuals_mut().extreme_bg_color = theme.editor_bg();
+        CentralPanel::default().show(ctx, |ui| {
+            ui.visuals_mut().extreme_bg_color = theme.editor_bg();
+
+            // ── Tab bar ──────────────────────────────────────────────────
+            ui.horizontal(|ui| {
+                let tab_style = |ui: &mut egui::Ui, label: &str, is_active: bool, indicator: Option<&str>| -> egui::Response {
+                    let text = if let Some(ind) = indicator {
+                        format!("{label}  {ind}")
+                    } else {
+                        label.to_string()
+                    };
+                    if is_active {
+                        ui.add(egui::Button::new(
+                            RichText::new(&text).strong().color(theme.accent()),
+                        ))
+                    } else {
+                        ui.add(egui::Button::new(
+                            RichText::new(&text),
+                        ))
+                    }
+                };
+
+                // Editor tab — show unsaved indicator
+                let editor_ind = if self.unsaved { Some("●") } else { None };
+                if tab_style(ui, "📝 Code", self.active_tab == CentralTab::Editor, editor_ind).clicked() {
+                    self.active_tab = CentralTab::Editor;
+                }
+
+                // Output tab — show char count when non-empty
+                let out_len = self.output.text.len();
+                let output_ind = if out_len > 0 {
+                    Some("◉")
+                } else { None };
+                if tab_style(ui, "📄 Output", self.active_tab == CentralTab::Output, output_ind).clicked() {
+                    self.active_tab = CentralTab::Output;
+                }
+
+                // Canvas tab — show dot when turtle has drawn
+                let has_gfx = !self.interpreter.ctx.turtle.lines.is_empty()
+                    || !self.interpreter.ctx.turtle.shapes.is_empty();
+                let canvas_ind = if has_gfx { Some("◉") } else { None };
+                if tab_style(ui, "🖼 Canvas", self.active_tab == CentralTab::Canvas, canvas_ind).clicked() {
+                    self.active_tab = CentralTab::Canvas;
+                }
+
+                // Show running state indicator on the right side of tab bar
+                ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+                    match &self.interpreter.state {
+                        RunState::Running      => { ui.colored_label(theme.success(), "● Running"); }
+                        RunState::WaitingInput => { ui.colored_label(theme.warning(), "● Input…"); }
+                        RunState::Finished     => { ui.colored_label(theme.accent(),  "✔ Done"); }
+                        RunState::Error(e)     => { ui.colored_label(theme.error(),   format!("✗ {e}")); }
+                        RunState::Idle         => {}
+                    }
+                });
+            });
+
+            ui.separator();
+
+            // ── Tab content ──────────────────────────────────────────────
+            match self.active_tab {
+                CentralTab::Editor => {
                     let changed = self.editor.show(ui, &theme);
                     if changed { self.unsaved = true; }
-                });
-            }
-            // ── Vertical: editor on left, canvas+output on right ────────────
-            CanvasSplit::Vertical => {
-                egui::SidePanel::right("v_right")
-                    .resizable(true)
-                    .min_width(200.0)
-                    .default_width(ps.right_panel_width)
-                    .show(ctx, |ui| {
-                        ui.visuals_mut().extreme_bg_color = theme.editor_bg();
-                        TopBottomPanel::bottom("v_output")
-                            .resizable(true)
-                            .min_height(80.0)
-                            .default_height(ps.output_height)
-                            .show_inside(ui, |ui| {
-                                self.output.show(ui, &theme);
-                            });
-                        self.canvas.show(ui, &self.interpreter.ctx.turtle);
-                    });
-                CentralPanel::default().show(ctx, |ui| {
-                    ui.visuals_mut().extreme_bg_color = theme.editor_bg();
-                    let changed = self.editor.show(ui, &theme);
-                    if changed { self.unsaved = true; }
-                });
-            }
-            // ── Editor only ──────────────────────────────────────────────────
-            CanvasSplit::EditorOnly => {
-                CentralPanel::default().show(ctx, |ui| {
-                    ui.visuals_mut().extreme_bg_color = theme.editor_bg();
-                    let changed = self.editor.show(ui, &theme);
-                    if changed { self.unsaved = true; }
-                });
-            }
-            // ── Canvas only ──────────────────────────────────────────────────
-            CanvasSplit::CanvasOnly => {
-                CentralPanel::default().show(ctx, |ui| {
-                    ui.visuals_mut().extreme_bg_color = theme.editor_bg();
+                }
+                CentralTab::Output => {
+                    self.output.show(ui, &theme);
+                }
+                CentralTab::Canvas => {
                     self.canvas.show(ui, &self.interpreter.ctx.turtle);
-                });
+                }
             }
-        }
+        });
     }
 }
 
