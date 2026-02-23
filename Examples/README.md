@@ -16,6 +16,7 @@ turtle graphics, IoT control, and algorithmic showcases.
 | `pilot/` | PILOT | 10 | Educational scripting, quizzes, pattern matching |
 | `prolog/` | Prolog | 10 | Logic programming, facts, rules, queries |
 | `demo/` | Mixed | 7 | One showcase per language — the "best of" collection |
+| `projects/` | BASIC + Logo | 31 | Raspberry Pi GPIO projects (Pico, Zero, Zero 2 W) |
 
 ## How to Run
 

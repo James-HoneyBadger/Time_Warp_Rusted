@@ -1,0 +1,149 @@
+; ===========================================================
+;  PROJECT 10 — Turtle Robot Controller (Logo + GPIO)
+;  Board:    Raspberry Pi Pico
+;  Hardware: Two DC motors via H-bridge (L298N or similar)
+;            Left motor:  Enable=GP10 (PWM), IN1=GP11, IN2=GP12
+;            Right motor: Enable=GP13 (PWM), IN3=GP14, IN4=GP15
+;  This program draws shapes on screen AND sends motor commands!
+; ===========================================================
+
+PRINT [=== Raspberry Pi Pico: Turtle Robot ===]
+PRINT [Left motor: GP10-12, Right motor: GP13-15]
+PRINT []
+
+; --- Motor pin setup ---
+; Left motor
+PINMODE 10 PWM
+PINMODE 11 OUTPUT
+PINMODE 12 OUTPUT
+
+; Right motor
+PINMODE 13 PWM
+PINMODE 14 OUTPUT
+PINMODE 15 OUTPUT
+
+; --- Motor control procedures ---
+
+TO MOTORS_STOP
+  ; Both motors off
+  PWMWRITE 10 0
+  PWMWRITE 13 0
+  DIGITALWRITE 11 0
+  DIGITALWRITE 12 0
+  DIGITALWRITE 14 0
+  DIGITALWRITE 15 0
+END
+
+TO MOTORS_FORWARD :speed
+  ; Both motors forward
+  DIGITALWRITE 11 1
+  DIGITALWRITE 12 0
+  DIGITALWRITE 14 1
+  DIGITALWRITE 15 0
+  PWMWRITE 10 :speed
+  PWMWRITE 13 :speed
+END
+
+TO MOTORS_BACKWARD :speed
+  ; Both motors backward
+  DIGITALWRITE 11 0
+  DIGITALWRITE 12 1
+  DIGITALWRITE 14 0
+  DIGITALWRITE 15 1
+  PWMWRITE 10 :speed
+  PWMWRITE 13 :speed
+END
+
+TO MOTORS_LEFT :speed
+  ; Left motor stop, right motor forward (pivot left)
+  PWMWRITE 10 0
+  DIGITALWRITE 14 1
+  DIGITALWRITE 15 0
+  PWMWRITE 13 :speed
+END
+
+TO MOTORS_RIGHT :speed
+  ; Left motor forward, right motor stop (pivot right)
+  DIGITALWRITE 11 1
+  DIGITALWRITE 12 0
+  PWMWRITE 10 :speed
+  PWMWRITE 13 0
+END
+
+; --- Drive patterns that mirror turtle drawings ---
+
+TO DRIVE_SQUARE :size :speed
+  PRINT [Robot: Driving a square]
+  REPEAT 4 [
+    ; Drive forward — turtle and motors
+    MOTORS_FORWARD :speed
+    FD :size
+    WAIT 10
+
+    ; Turn right 90 degrees
+    MOTORS_RIGHT :speed
+    RT 90
+    WAIT 5
+
+    MOTORS_STOP
+  ]
+END
+
+TO DRIVE_TRIANGLE :size :speed
+  PRINT [Robot: Driving a triangle]
+  REPEAT 3 [
+    MOTORS_FORWARD :speed
+    FD :size
+    WAIT 10
+
+    MOTORS_RIGHT :speed
+    RT 120
+    WAIT 5
+
+    MOTORS_STOP
+  ]
+END
+
+TO DRIVE_CIRCLE :radius :speed
+  PRINT [Robot: Driving a circle]
+  ; Approximate circle with many small moves
+  REPEAT 36 [
+    MOTORS_FORWARD :speed
+    FD :radius / 3
+    WAIT 2
+
+    MOTORS_RIGHT :speed
+    RT 10
+    WAIT 1
+  ]
+  MOTORS_STOP
+END
+
+; --- Main program ---
+
+CS
+SETPENCOLOR "blue"
+PU SETXY -100 50 PD
+
+PRINT [--- Square Pattern ---]
+DRIVE_SQUARE 80 200
+
+PU SETXY 50 50 PD
+SETPENCOLOR "red"
+
+PRINT [--- Triangle Pattern ---]
+DRIVE_TRIANGLE 100 180
+
+PU SETXY -30 -80 PD
+SETPENCOLOR "green"
+
+PRINT [--- Circle Pattern ---]
+DRIVE_CIRCLE 60 150
+
+; Park the robot
+MOTORS_STOP
+PRINT []
+PRINT [Turtle Robot demo complete!]
+PRINT [The turtle drawing shows the path the robot drove]
+
+GPIORESET

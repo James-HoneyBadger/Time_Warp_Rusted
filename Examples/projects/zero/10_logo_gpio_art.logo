@@ -1,0 +1,120 @@
+; ===========================================================
+;  PROJECT 10 — Turtle Art with GPIO Patterns (Logo + GPIO)
+;  Board:    Raspberry Pi Zero
+;  Hardware: 4 LEDs on GPIO17, GPIO27, GPIO22, GPIO5
+;  Each LED lights up as the turtle draws its shape!
+; ===========================================================
+
+PRINT [=== Raspberry Pi Zero: Logo Art + GPIO ===]
+PRINT [Drawing shapes with LED accompaniment]
+PRINT []
+
+; Set up 4 LED pins
+PINMODE 17 OUTPUT
+PINMODE 27 OUTPUT
+PINMODE 22 OUTPUT
+PINMODE 5  OUTPUT
+
+; Turn all off
+DIGITALWRITE 17 0
+DIGITALWRITE 27 0
+DIGITALWRITE 22 0
+DIGITALWRITE 5  0
+
+; --- Helper procedures ---
+TO LEDSOFF
+  DIGITALWRITE 17 0
+  DIGITALWRITE 27 0
+  DIGITALWRITE 22 0
+  DIGITALWRITE 5  0
+END
+
+TO FLASH_ALL :times
+  REPEAT :times [
+    DIGITALWRITE 17 1
+    DIGITALWRITE 27 1
+    DIGITALWRITE 22 1
+    DIGITALWRITE 5  1
+    WAIT 5
+    LEDSOFF
+    WAIT 5
+  ]
+END
+
+; --- Shape 1: Red Square (LED 1 on) ---
+CS
+PRINT [Drawing red square...]
+DIGITALWRITE 17 1
+SETPENCOLOR "red"
+SETPENSIZE 3
+PU SETXY -120 80 PD
+
+REPEAT 4 [FD 80 RT 90]
+
+LEDSOFF
+WAIT 10
+
+; --- Shape 2: Green Triangle (LED 2 on) ---
+PRINT [Drawing green triangle...]
+DIGITALWRITE 27 1
+SETPENCOLOR "green"
+PU SETXY 40 80 PD
+
+REPEAT 3 [FD 90 RT 120]
+
+LEDSOFF
+WAIT 10
+
+; --- Shape 3: Blue Pentagon (LED 3 on) ---
+PRINT [Drawing blue pentagon...]
+DIGITALWRITE 22 1
+SETPENCOLOR "blue"
+PU SETXY -120 -50 PD
+
+REPEAT 5 [FD 55 RT 72]
+
+LEDSOFF
+WAIT 10
+
+; --- Shape 4: Yellow Hexagon (LED 4 on) ---
+PRINT [Drawing yellow hexagon...]
+DIGITALWRITE 5 1
+SETPENCOLOR "yellow"
+PU SETXY 40 -50 PD
+
+REPEAT 6 [FD 45 RT 60]
+
+LEDSOFF
+WAIT 10
+
+; --- Grand Finale: Spiral with cycling LEDs ---
+PRINT [Drawing spiral with LED chase...]
+PU SETXY 0 0 PD
+SETPENSIZE 2
+
+MAKE "led_index 0
+
+REPEAT 36 [
+  ; Cycle through LED colours
+  LEDSOFF
+  IF :led_index = 0 [DIGITALWRITE 17 1 SETPENCOLOR "red"]
+  IF :led_index = 1 [DIGITALWRITE 27 1 SETPENCOLOR "green"]
+  IF :led_index = 2 [DIGITALWRITE 22 1 SETPENCOLOR "blue"]
+  IF :led_index = 3 [DIGITALWRITE 5  1 SETPENCOLOR "yellow"]
+
+  FD REPCOUNT * 4
+  RT 25
+
+  MAKE "led_index (:led_index + 1) % 4
+]
+
+; Final flash
+FLASH_ALL 5
+
+LEDSOFF
+HT
+PRINT []
+PRINT [Logo + GPIO demo complete!]
+PRINT [Each shape was drawn with its LED lit up]
+
+GPIORESET

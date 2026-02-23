@@ -1,0 +1,190 @@
+; ===========================================================
+;  PROJECT 10 — Logo Drawing Robot with GPIO Motor Control
+;  Board:    Raspberry Pi Zero 2 W
+;  Hardware: Two DC motors via H-bridge (L298N)
+;            Left motor:  Enable=GPIO12(PWM), IN1=GPIO5, IN2=GPIO6
+;            Right motor: Enable=GPIO13(PWM), IN3=GPIO19, IN4=GPIO26
+;            Pen servo on GPIO18 (lifts/drops a drawing pen)
+;  Concept:  The turtle draws on screen AND drives a real robot!
+;            WiFi enables remote control commands.
+; ===========================================================
+
+PRINT [=== Raspberry Pi Zero 2 W: Drawing Robot ===]
+PRINT [Motors: GPIO12-13(PWM), GPIO5-6, GPIO19-26]
+PRINT [Pen servo: GPIO18]
+PRINT []
+
+; Motor pins
+PINMODE 12 PWM
+PINMODE 5  OUTPUT
+PINMODE 6  OUTPUT
+PINMODE 13 PWM
+PINMODE 19 OUTPUT
+PINMODE 26 OUTPUT
+
+; Pen servo
+PINMODE 18 PWM
+
+; --- Motor control procedures ---
+
+TO STOP_MOTORS
+  PWMWRITE 12 0
+  PWMWRITE 13 0
+  DIGITALWRITE 5  0
+  DIGITALWRITE 6  0
+  DIGITALWRITE 19 0
+  DIGITALWRITE 26 0
+END
+
+TO GO_FORWARD :speed :distance
+  DIGITALWRITE 5  1
+  DIGITALWRITE 6  0
+  DIGITALWRITE 19 1
+  DIGITALWRITE 26 0
+  PWMWRITE 12 :speed
+  PWMWRITE 13 :speed
+  FD :distance
+  STOP_MOTORS
+END
+
+TO GO_BACKWARD :speed :distance
+  DIGITALWRITE 5  0
+  DIGITALWRITE 6  1
+  DIGITALWRITE 19 0
+  DIGITALWRITE 26 1
+  PWMWRITE 12 :speed
+  PWMWRITE 13 :speed
+  BK :distance
+  STOP_MOTORS
+END
+
+TO TURN_LEFT :speed :angle
+  DIGITALWRITE 5  0
+  DIGITALWRITE 6  1
+  DIGITALWRITE 19 1
+  DIGITALWRITE 26 0
+  PWMWRITE 12 :speed
+  PWMWRITE 13 :speed
+  LT :angle
+  STOP_MOTORS
+END
+
+TO TURN_RIGHT :speed :angle
+  DIGITALWRITE 5  1
+  DIGITALWRITE 6  0
+  DIGITALWRITE 19 0
+  DIGITALWRITE 26 1
+  PWMWRITE 12 :speed
+  PWMWRITE 13 :speed
+  RT :angle
+  STOP_MOTORS
+END
+
+; Pen control: 90=down (drawing), 30=up (moving)
+TO PEN_DOWN
+  ; Lower the pen servo to draw
+  SERVOWRITE 18 90
+  PD
+END
+
+TO PEN_UP
+  ; Raise the pen servo
+  SERVOWRITE 18 30
+  PU
+END
+
+; --- Drawing procedures ---
+
+TO ROBOT_SQUARE :size :speed
+  PRINT [Robot: Drawing a square]
+  PEN_DOWN
+  SETPENCOLOR "blue"
+  REPEAT 4 [
+    GO_FORWARD :speed :size
+    TURN_RIGHT :speed 90
+  ]
+  PEN_UP
+END
+
+TO ROBOT_TRIANGLE :size :speed
+  PRINT [Robot: Drawing a triangle]
+  PEN_DOWN
+  SETPENCOLOR "red"
+  REPEAT 3 [
+    GO_FORWARD :speed :size
+    TURN_RIGHT :speed 120
+  ]
+  PEN_UP
+END
+
+TO ROBOT_STAR :size :speed
+  PRINT [Robot: Drawing a star]
+  PEN_DOWN
+  SETPENCOLOR "gold"
+  REPEAT 5 [
+    GO_FORWARD :speed :size
+    TURN_RIGHT :speed 144
+  ]
+  PEN_UP
+END
+
+TO ROBOT_SPIRAL :speed
+  PRINT [Robot: Drawing a spiral]
+  PEN_DOWN
+  SETPENCOLOR "purple"
+  REPEAT 30 [
+    GO_FORWARD :speed REPCOUNT * 3
+    TURN_RIGHT :speed 30
+  ]
+  PEN_UP
+END
+
+; --- Main program ---
+
+CS
+PRINT [Starting drawing robot demo...]
+PRINT []
+
+; Move to starting position
+PEN_UP
+SETXY -100 60
+
+PRINT [-- Shape 1: Square --]
+ROBOT_SQUARE 70 180
+WAIT 10
+
+; Move to next position
+PEN_UP
+SETXY 50 60
+
+PRINT [-- Shape 2: Triangle --]
+ROBOT_TRIANGLE 80 180
+WAIT 10
+
+; Move to next position
+PEN_UP
+SETXY -40 -20
+
+PRINT [-- Shape 3: Star --]
+ROBOT_STAR 60 200
+WAIT 10
+
+; Move to centre for spiral
+PEN_UP
+SETXY 0 -40
+
+PRINT [-- Shape 4: Spiral --]
+ROBOT_SPIRAL 150
+
+; Park the robot
+STOP_MOTORS
+PEN_UP
+HOME
+HT
+
+PRINT []
+PRINT [Drawing robot demo complete!]
+PRINT [On-screen turtle path = real robot path]
+PRINT [WiFi: Commands could be sent remotely!]
+
+GPIORESET
