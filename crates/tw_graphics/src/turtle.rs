@@ -1,6 +1,6 @@
 //! Turtle graphics state — faithful Rust port of `turtle_state.py`.
 //!
-//! Canvas coordinates: (0, 0) is centre; Y-axis is inverted (up = negative).
+//! Canvas coordinates: (0, 0) is centre; positive Y = up (canvas flips for screen).
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -234,9 +234,9 @@ impl TurtleState {
     /// Move forward by `distance` pixels, drawing a line when pen is down.
     pub fn forward(&mut self, distance: f64) {
         let rad = self.heading.to_radians();
-        // Heading 0 = north; x increases east, y increases south on screen
-        let dx =  distance * rad.sin();
-        let dy = -distance * rad.cos();
+        // Heading 0 = north (positive Y = up); canvas flips Y for screen.
+        let dx = distance * rad.sin();
+        let dy = distance * rad.cos();
         self.move_to(self.x + dx, self.y + dy);
     }
 

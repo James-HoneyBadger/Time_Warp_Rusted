@@ -14,9 +14,15 @@ pub struct ForthExecutor {
     pub memory:       Vec<i64>,
     pub dictionary:   HashMap<String, Vec<String>>, // user-defined words → token list
     pub output:       String,
+    /// DO/LOOP stack: (index, limit, token-position of DO)
+    pub loop_stack:   Vec<(i64, i64, usize)>,
     compiling:        bool,
     new_word:         String,
     new_def:          Vec<String>,
+    /// Call depth for user-defined words (prevents runaway recursion).
+    call_depth:       u32,
+    /// Iteration counter for BEGIN/AGAIN/UNTIL/REPEAT loops.
+    iteration_count:  u64,
 }
 
 impl Default for ForthExecutor {
@@ -27,9 +33,12 @@ impl Default for ForthExecutor {
             memory:       vec![0; 256],
             dictionary:   HashMap::new(),
             output:       String::new(),
+            loop_stack:   Vec::new(),
             compiling:    false,
             new_word:     String::new(),
             new_def:      Vec::new(),
+            call_depth:   0,
+            iteration_count: 0,
         }
     }
 }
@@ -41,7 +50,7 @@ impl ForthExecutor {
 
     /// Execute a line of Forth source, modifying turtle state on `ctx`.
     pub fn execute(&mut self, ctx: &mut ExecContext, line: &str) -> String {
-        self.output.clear();
+        let saved_output = std::mem::take(&mut self.output);
         let tokens = self.tokenize_forth(line);
 
         let mut i = 0;
@@ -90,7 +99,9 @@ impl ForthExecutor {
             i += 1;
         }
 
-        self.output.clone()
+        let result = self.output.clone();
+        self.output = saved_output;
+        result
     }
 
     fn exec_word(&mut self, ctx: &mut ExecContext, word: &str, tokens: &[String], i: &mut usize) {
@@ -145,6 +156,7 @@ impl ForthExecutor {
             "/MOD" => {
                 let b = self.pop(); let a = self.pop();
                 if b != 0 { self.stack.push(a % b); self.stack.push(a / b); }
+                else { self.stack.push(0); self.stack.push(0); }
             }
             "NEGATE" => { let a = self.pop(); self.stack.push(-a); }
             "ABS"    => { let a = self.pop(); self.stack.push(a.abs()); }
@@ -199,7 +211,8 @@ impl ForthExecutor {
             "!"  => {
                 let addr = self.pop() as usize;
                 let val  = self.pop();
-                if addr < self.memory.len() { self.memory[addr] = val; }
+                if addr > 65536 { /* safety limit */ }
+                else if addr < self.memory.len() { self.memory[addr] = val; }
                 else { self.memory.resize(addr + 1, 0); self.memory[addr] = val; }
             }
             "C@" => {
@@ -271,16 +284,24 @@ impl ForthExecutor {
             "THEN" => {} // no-op; jump destination
 
             // BEGIN / AGAIN / UNTIL / WHILE / REPEAT
-            "BEGIN" => { self.return_stack.push(*i); }
+            "BEGIN" => { self.return_stack.push(*i); self.iteration_count = 0; }
             "AGAIN" => {
-                if let Some(begin) = self.return_stack.last().copied() {
+                self.iteration_count += 1;
+                if self.iteration_count > 100_000 {
+                    self.output.push_str("⚠️ Forth: loop limit reached (BEGIN/AGAIN)\n");
+                    self.return_stack.pop();
+                } else if let Some(begin) = self.return_stack.last().copied() {
                     *i = begin; // will be incremented by outer loop
                 }
             }
             "UNTIL" => {
                 let cond = self.pop();
                 if cond == 0 {
-                    if let Some(begin) = self.return_stack.last().copied() {
+                    self.iteration_count += 1;
+                    if self.iteration_count > 100_000 {
+                        self.output.push_str("⚠️ Forth: loop limit reached (BEGIN/UNTIL)\n");
+                        self.return_stack.pop();
+                    } else if let Some(begin) = self.return_stack.last().copied() {
                         *i = begin;
                     }
                 } else {
@@ -305,58 +326,57 @@ impl ForthExecutor {
                 }
             }
             "REPEAT" => {
-                if let Some(begin) = self.return_stack.last().copied() {
+                self.iteration_count += 1;
+                if self.iteration_count > 100_000 {
+                    self.output.push_str("⚠️ Forth: loop limit reached (BEGIN/REPEAT)\n");
+                    self.return_stack.pop();
+                } else if let Some(begin) = self.return_stack.last().copied() {
                     *i = begin;
                 }
             }
 
-            // DO / LOOP
+            // DO / LOOP — loop state on dedicated loop_stack
             "DO" => {
                 let start = self.pop();
                 let limit = self.pop();
-                self.return_stack.push(*i);
-                self.stack.push(limit);
-                self.stack.push(start);
+                self.loop_stack.push((start, limit, *i));
             }
             "LOOP" => {
-                let index = self.pop() + 1;
-                let limit = self.stack.last().copied().unwrap_or(0);
-                self.stack.push(index);
-                if index < limit {
-                    if let Some(do_pos) = self.return_stack.last().copied() {
-                        *i = do_pos;
+                if let Some((index, limit, do_pos)) = self.loop_stack.last_mut() {
+                    *index += 1;
+                    if *index < *limit {
+                        *i = *do_pos;
+                    } else {
+                        self.loop_stack.pop();
                     }
-                } else {
-                    self.pop(); self.pop(); // index and limit
-                    self.return_stack.pop();
                 }
             }
             "+LOOP" => {
-                let step  = self.pop();
-                let index = self.pop() + step;
-                let limit = self.stack.last().copied().unwrap_or(0);
-                self.stack.push(index);
-                let done = if step > 0 { index >= limit } else { index <= limit };
-                if !done {
-                    if let Some(do_pos) = self.return_stack.last().copied() { *i = do_pos; }
-                } else {
-                    self.pop(); self.pop();
-                    self.return_stack.pop();
+                let step = self.pop();
+                if let Some((index, limit, do_pos)) = self.loop_stack.last_mut() {
+                    *index += step;
+                    let done = if step > 0 { *index >= *limit } else { *index <= *limit };
+                    if !done {
+                        *i = *do_pos;
+                    } else {
+                        self.loop_stack.pop();
+                    }
                 }
             }
             "I" => {
-                if let Some(&top) = self.stack.last() { self.stack.push(top); }
+                if let Some(&(index, _, _)) = self.loop_stack.last() {
+                    self.stack.push(index);
+                }
             }
             "J" => {
-                let n = self.stack.len();
-                if n >= 3 { self.stack.push(self.stack[n-3]); }
+                if self.loop_stack.len() >= 2 {
+                    let j_idx = self.loop_stack.len() - 2;
+                    self.stack.push(self.loop_stack[j_idx].0);
+                }
             }
             "LEAVE" => {
-                // Clean up: pop loop index and limit from data stack, position from return stack
-                self.pop(); // index
-                self.pop(); // limit
-                if let Some(do_pos) = self.return_stack.pop() {
-                    // Skip to matching LOOP/+LOOP
+                if let Some((_, _, do_pos)) = self.loop_stack.pop() {
+                    // Skip forward to matching LOOP/+LOOP
                     let mut depth = 1i32;
                     let mut j = do_pos + 1;
                     while j < tokens.len() {
@@ -428,7 +448,14 @@ impl ForthExecutor {
                         return;
                     }
                     let line = def.join(" ");
+                    self.call_depth += 1;
+                    if self.call_depth > 256 {
+                        self.output.push_str("⚠️ Forth: call depth limit exceeded\n");
+                        self.call_depth -= 1;
+                        return;
+                    }
                     let result = self.execute(ctx, &line);
+                    self.call_depth -= 1;
                     if !result.is_empty() {
                         self.output.push_str(&result);
                     }

@@ -257,12 +257,19 @@ fn pascal_if(ctx: &mut ExecContext, line: &str) -> ControlFlow {
 
 fn find_word(hay: &str, needle: &str) -> Option<usize> {
     let nlen = needle.len();
-    for i in 0..=hay.len().saturating_sub(nlen) {
-        if hay[i..].starts_with(needle) {
-            let before = i == 0 || !hay[i-1..i].chars().next().unwrap_or(' ').is_alphanumeric();
-            let after  = i + nlen >= hay.len() || !hay[i+nlen..i+nlen+1].chars().next().unwrap_or(' ').is_alphanumeric();
-            if before && after { return Some(i); }
+    if hay.len() < nlen { return None; }
+    let chars: Vec<char> = hay.chars().collect();
+    let mut byte_pos = 0usize;
+    let mut in_q = false;
+    for (ci, &ch) in chars.iter().enumerate() {
+        if ch == '\'' { in_q = !in_q; }
+        if !in_q && hay[byte_pos..].starts_with(needle) {
+            let before_ok = ci == 0 || !chars[ci - 1].is_alphanumeric();
+            let after_ci = ci + needle.chars().count();
+            let after_ok = after_ci >= chars.len() || !chars[after_ci].is_alphanumeric();
+            if before_ok && after_ok { return Some(byte_pos); }
         }
+        byte_pos += ch.len_utf8();
     }
     None
 }
@@ -287,11 +294,33 @@ fn pascal_while(ctx: &mut ExecContext, line: &str) -> ControlFlow {
     let cond = &line[6..do_pos].trim();
     let val = ctx.eval_f64(cond);
     if val == 0.0 {
-        // Skip to matching end (line-based: just skip this line)
-        return ControlFlow::Continue; // body handled by executor loop
+        // Condition false — skip to matching END
+        return pascal_skip_to_end(ctx);
     }
     ctx.while_stack.push((ctx.line_idx, cond.to_string()));
     ControlFlow::Continue
+}
+
+/// Skip forward past a matching BEGIN/END block.
+fn pascal_skip_to_end(ctx: &ExecContext) -> ControlFlow {
+    let mut depth = 1usize;
+    for i in ctx.line_idx + 1..ctx.program_lines.len() {
+        let (_, line) = &ctx.program_lines[i];
+        let up = line.trim().to_uppercase();
+        if up.starts_with("BEGIN") || up.starts_with("WHILE ")
+            || up.starts_with("FOR ") || up.starts_with("REPEAT")
+        {
+            depth += 1;
+        }
+        // "END" can appear as "END.", "END;" or standalone
+        if up == "END" || up == "END." || up == "END;" {
+            depth -= 1;
+            if depth == 0 {
+                return ControlFlow::Jump(i + 1);
+            }
+        }
+    }
+    ControlFlow::End
 }
 
 // ── for … do ─────────────────────────────────────────────────────────────────
@@ -322,7 +351,10 @@ fn pascal_for(ctx: &mut ExecContext, line: &str) -> ControlFlow {
     let rest_up = rest_after_do.to_uppercase();
     if !rest_after_do.is_empty() && rest_up != "BEGIN" {
         // Single-statement body on same line as FOR
+        let mut iter_count = 0u64;
         loop {
+            iter_count += 1;
+            if iter_count > 100_000 { ctx.output.push("Error: FOR loop exceeded 100000 iterations".to_string()); break; }
             execute_pascal(ctx, rest_after_do);
             let current = ctx.get_var(&var_name);
             let next_val = current + step;
@@ -340,7 +372,10 @@ fn pascal_for(ctx: &mut ExecContext, line: &str) -> ControlFlow {
         if !next_up.starts_with("BEGIN") {
             // Single-statement body on next line
             let body = ctx.program_lines[next_idx].1.clone();
+            let mut iter_count = 0u64;
             loop {
+                iter_count += 1;
+                if iter_count > 100_000 { ctx.output.push("Error: FOR loop exceeded 100000 iterations".to_string()); break; }
                 execute_pascal(ctx, &body);
                 let current = ctx.get_var(&var_name);
                 let next_val = current + step;
@@ -435,8 +470,14 @@ fn split_args(args: &str) -> Vec<String> {
     let mut current = String::new();
     let mut depth = 0i32;
     let mut in_q  = false;
+    let mut q_char = ' ';
     for ch in args.chars() {
-        if ch == '\'' || ch == '"' { in_q = !in_q; }
+        if !in_q && (ch == '\'' || ch == '"') {
+            in_q = true;
+            q_char = ch;
+        } else if in_q && ch == q_char {
+            in_q = false;
+        }
         if !in_q {
             if ch == '(' { depth += 1; }
             if ch == ')' { depth -= 1; }

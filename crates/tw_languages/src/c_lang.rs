@@ -51,21 +51,43 @@ pub fn execute_c(ctx: &mut ExecContext, command: &str) -> ControlFlow {
         if upper_line.contains("ELSE") {
             return c_skip_block(ctx);
         }
-        // Check if closing a while loop
-        if let Some((while_idx, ref cond)) = ctx.while_stack.last().cloned() {
-            // Re-evaluate condition and jump back if true
-            let val = ctx.eval_f64(&cond);
-            if val != 0.0 {
-                return ControlFlow::Jump(while_idx);
+        // Determine which loop is innermost by comparing their start indices.
+        // The innermost loop has the highest start index.
+        let while_idx = ctx.while_stack.last().map(|(idx, _)| *idx);
+        let for_idx   = ctx.for_stack.last().map(|f| f.for_idx);
+        match (while_idx, for_idx) {
+            (Some(wi), Some(fi)) if wi > fi => {
+                // While loop is innermost — re-evaluate condition
+                let (_, cond) = ctx.while_stack.last().cloned().unwrap();
+                let val = ctx.eval_f64(&cond);
+                if val != 0.0 {
+                    return ControlFlow::Jump(wi);
+                }
+                ctx.while_stack.pop();
+                return ControlFlow::Continue;
             }
-            ctx.while_stack.pop();
-            return ControlFlow::Continue;
+            (Some(_wi), Some(_fi)) => {
+                // For loop is innermost
+                let frame = ctx.for_stack.last().cloned().unwrap();
+                return ControlFlow::Jump(frame.for_idx);
+            }
+            (Some(_), None) => {
+                let (wi, cond) = ctx.while_stack.last().cloned().unwrap();
+                let val = ctx.eval_f64(&cond);
+                if val != 0.0 {
+                    return ControlFlow::Jump(wi);
+                }
+                ctx.while_stack.pop();
+                return ControlFlow::Continue;
+            }
+            (None, Some(_)) => {
+                let frame = ctx.for_stack.last().cloned().unwrap();
+                return ControlFlow::Jump(frame.for_idx);
+            }
+            (None, None) => {
+                return ControlFlow::Continue;
+            }
         }
-        // Check if closing a for loop
-        if let Some(frame) = ctx.for_stack.last().cloned() {
-            return ControlFlow::Jump(frame.for_idx);
-        }
-        return ControlFlow::Continue;
     }
 
     // ── if (cond) { ──────────────────────────────────────────────────────
@@ -232,7 +254,7 @@ fn c_printf(ctx: &mut ExecContext, line: &str) -> ControlFlow {
         .collect();
 
     let out = format_printf(fmt, &vals, &val_strs);
-    let out = out.replace("\\n", "\n").replace("\\t", "\t");
+    // format_printf already handles escape sequences (\n, \t, etc.)
     ctx.emit(&out);
     ControlFlow::Continue
 }
@@ -322,7 +344,11 @@ fn find_compound_assign(line: &str) -> Option<usize> {
 
 fn c_compound_assign(ctx: &mut ExecContext, lhs: &str, op_rhs: &str) -> ControlFlow {
     let name = lhs.trim().to_uppercase();
-    let (op, rhs) = if op_rhs.starts_with("+=") {
+    let (op, rhs) = if op_rhs.starts_with("<<=") {
+        ('<', op_rhs[3..].trim())
+    } else if op_rhs.starts_with(">>=") {
+        ('>', op_rhs[3..].trim())
+    } else if op_rhs.starts_with("+=") {
         ('+', op_rhs[2..].trim())
     } else if op_rhs.starts_with("-=") {
         ('-', op_rhs[2..].trim())
@@ -330,16 +356,32 @@ fn c_compound_assign(ctx: &mut ExecContext, lhs: &str, op_rhs: &str) -> ControlF
         ('*', op_rhs[2..].trim())
     } else if op_rhs.starts_with("/=") {
         ('/', op_rhs[2..].trim())
+    } else if op_rhs.starts_with("%=") {
+        ('%', op_rhs[2..].trim())
+    } else if op_rhs.starts_with("&=") {
+        ('&', op_rhs[2..].trim())
+    } else if op_rhs.starts_with("|=") {
+        ('|', op_rhs[2..].trim())
+    } else if op_rhs.starts_with("^=") {
+        ('^', op_rhs[2..].trim())
     } else {
         return ControlFlow::Continue;
     };
     let right = ctx.eval_f64(rhs);
     let left  = ctx.get_var(&name);
+    let li = left as i64;
+    let ri = right as i64;
     let result = match op {
         '+' => left + right,
         '-' => left - right,
         '*' => left * right,
         '/' => if right != 0.0 { left / right } else { 0.0 },
+        '%' => if right != 0.0 { left % right } else { 0.0 },
+        '&' => (li & ri) as f64,
+        '|' => (li | ri) as f64,
+        '^' => (li ^ ri) as f64,
+        '<' => (li << (ri as u32 & 63)) as f64,
+        '>' => (li >> (ri as u32 & 63)) as f64,
         _ => left,
     };
     ctx.set_var(&name, result);

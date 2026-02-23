@@ -226,9 +226,14 @@ fn unify(x: &str, y: &str, mut env: HashMap<String, String>) -> Option<HashMap<S
 }
 
 fn resolve_var(term: &str, env: &HashMap<String, String>) -> String {
+    resolve_var_depth(term, env, 0)
+}
+
+fn resolve_var_depth(term: &str, env: &HashMap<String, String>, depth: u32) -> String {
+    if depth > 64 { return term.to_string(); }
     if is_var(term) {
         if let Some(v) = env.get(term) {
-            return resolve_var(v, env);
+            return resolve_var_depth(v, env, depth + 1);
         }
     }
     term.to_string()

@@ -137,7 +137,7 @@ impl CodeEditor {
         let lower_src = self.source.to_lowercase();
         let lower_find = self.find_text.to_lowercase();
         if let Some(pos) = lower_src.find(&lower_find) {
-            let end = pos + self.find_text.len();
+            let end = pos + lower_find.len();
             self.source = format!(
                 "{}{}{}",
                 &self.source[..pos],
@@ -155,10 +155,10 @@ impl CodeEditor {
         let lower_src = self.source.to_lowercase();
         let lower_find = self.find_text.to_lowercase();
         let mut last = 0;
-        for (start, _) in lower_src.match_indices(&lower_find) {
+        for (start, matched) in lower_src.match_indices(&lower_find) {
             result.push_str(&self.source[last..start]);
             result.push_str(&self.replace_text);
-            last = start + self.find_text.len();
+            last = start + matched.len();
         }
         result.push_str(&self.source[last..]);
         self.source = result;

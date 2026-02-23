@@ -110,13 +110,13 @@ fn exec_tokens_inner(ctx: &mut ExecContext, tokens: &[String], start: usize) -> 
                         .filter_map(|s| s.parse::<f64>().ok())
                         .collect();
                     if nums.len() >= 2 {
-                        ctx.turtle.set_pos(nums[0], nums[1]);
+                        ctx.turtle.move_to(nums[0], nums[1]);
                     }
                     i += 2;
                 } else {
                     let (x, ax) = get_number(ctx, tokens, i + 1);
                     let (y, ay) = get_number(ctx, tokens, i + 1 + ax);
-                    ctx.turtle.set_pos(x, y);
+                    ctx.turtle.move_to(x, y);
                     i += 1 + ax + ay;
                 }
             }
