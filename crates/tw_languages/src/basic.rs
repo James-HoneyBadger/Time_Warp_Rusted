@@ -22,35 +22,52 @@ pub fn execute_basic(ctx: &mut ExecContext, command: &str) -> ControlFlow {
     // ── Multi-line IF block tracking ──────────────────────────────────────
     // Structural keywords (IF/ELSE/END IF/ELSEIF) must always be processed
     // so the block stack stays balanced, even inside skipped regions.
+    // Each stack entry = (currently_executing, any_branch_taken_in_this_chain).
     let skipping = !ctx.if_block_stack.is_empty()
-        && !ctx.if_block_stack.iter().all(|b| *b);
+        && !ctx.if_block_stack.iter().all(|(exec, _)| *exec);
 
     if cmd_up_str == "END IF" || cmd_up_str == "ENDIF" {
         ctx.if_block_stack.pop();
         return ControlFlow::Continue;
     }
-    if cmd_up_str == "ELSE" || cmd_up_str.starts_with("ELSE ") {
-        // Toggle top of stack, but only if the parent is executing.
+    if cmd_up_str == "ELSE" || cmd_up_str.starts_with("ELSE ") || cmd_up_str.starts_with("ELSEIF") {
+        // Only act if the parent (all stack entries below the top) is executing.
         let parent_ok = ctx.if_block_stack.len() <= 1
-            || ctx.if_block_stack[..ctx.if_block_stack.len() - 1].iter().all(|b| *b);
-        if parent_ok {
-            if let Some(top) = ctx.if_block_stack.last_mut() {
-                *top = !*top;
-            }
-        }
-        // If the "ELSE" carries an IF (ELSEIF), process the inline IF
+            || ctx.if_block_stack[..ctx.if_block_stack.len() - 1].iter().all(|(exec, _)| *exec);
+
+        // Handle ELSEIF / ELSE IF
         if cmd_up_str.starts_with("ELSE IF ")
             || cmd_up_str.starts_with("ELSEIF ")
         {
-            // Pop the current block (ELSE ends the previous IF)
+            let any_taken = ctx.if_block_stack.last().map_or(false, |e| e.1);
             ctx.if_block_stack.pop();
-            // Re-enter as a new IF
-            let if_part = if cmd_up_str.starts_with("ELSEIF ") {
-                &command[7..]
+            if any_taken {
+                // A previous branch already executed — skip this ELSEIF
+                ctx.if_block_stack.push((false, true));
             } else {
-                &command[8..]
-            };
-            return basic_if_block(ctx, if_part.trim());
+                // No branch taken yet — evaluate the new condition
+                let if_part = if cmd_up_str.starts_with("ELSEIF ") {
+                    &command[7..]
+                } else {
+                    &command[8..]
+                };
+                return basic_if_block(ctx, if_part.trim());
+            }
+            return ControlFlow::Continue;
+        }
+
+        // Plain ELSE
+        if parent_ok {
+            if let Some(top) = ctx.if_block_stack.last_mut() {
+                if !top.1 {
+                    // No branch has executed yet — execute ELSE
+                    top.0 = true;
+                    top.1 = true;
+                } else {
+                    // A branch already ran — skip ELSE
+                    top.0 = false;
+                }
+            }
         }
         return ControlFlow::Continue;
     }
@@ -58,7 +75,7 @@ pub fn execute_basic(ctx: &mut ExecContext, command: &str) -> ControlFlow {
     // If we're inside a skipped block, only count nested IFs for depth tracking
     if skipping {
         if cmd_up_str.starts_with("IF ") && is_block_if(&cmd_up) {
-            ctx.if_block_stack.push(false); // nested skip
+            ctx.if_block_stack.push((false, false)); // nested skip
         }
         return ControlFlow::Continue;
     }
@@ -431,6 +448,72 @@ fn split_statements(command: &str) -> Vec<String> {
     parts
 }
 
+/// Resolve user-defined function calls in a BASIC expression.
+/// Replaces `FUNCNAME(args)` with the evaluated return value.
+fn resolve_basic_funcs(ctx: &mut ExecContext, expr: &str) -> String {
+    let sub_names: Vec<String> = ctx.subs.keys().cloned().collect();
+    if sub_names.is_empty() { return expr.to_string(); }
+    let mut result = expr.to_string();
+    for name in &sub_names {
+        let mut iters = 0;
+        loop {
+            iters += 1;
+            if iters > 20 { break; } // safety
+            let upper_result = result.to_uppercase();
+            let pattern = format!("{name}(");
+            let pos = match upper_result.find(&pattern) {
+                Some(p) => p,
+                None => break,
+            };
+            let open = pos + name.len();
+            let mut depth = 0i32;
+            let mut close = open;
+            for (j, ch) in result[open..].char_indices() {
+                if ch == '(' { depth += 1; }
+                if ch == ')' { depth -= 1; }
+                if depth == 0 { close = open + j; break; }
+            }
+            let args_str = result[open+1..close].to_string();
+            // Get sub definition
+            let sub = match ctx.subs.get(name).cloned() {
+                Some(s) => s,
+                None => break,
+            };
+            // Evaluate arguments
+            let arg_vals: Vec<f64> = if args_str.trim().is_empty() {
+                vec![]
+            } else {
+                args_str.split(',').map(|a| ctx.eval_f64(a.trim())).collect()
+            };
+            // Bind parameters and execute body
+            let saved: Vec<(String, f64)> = sub.params.iter().enumerate().map(|(i, p)| {
+                let old = ctx.get_var(p);
+                ctx.set_var(p, arg_vals.get(i).copied().unwrap_or(0.0));
+                (p.clone(), old)
+            }).collect();
+            // Execute function body
+            for line in &sub.body_lines {
+                match execute_basic(ctx, line) {
+                    ControlFlow::Continue => {}
+                    ControlFlow::Return | ControlFlow::End => break,
+                    _ => break,
+                }
+            }
+            let ret = ctx.get_var(name);
+            // Restore
+            for (p, v) in saved { ctx.set_var(&p, v); }
+            // Format return value
+            let val_str = if ret == ret.floor() && ret.abs() < 1e15 {
+                format!("{}", ret as i64)
+            } else {
+                format!("{ret}")
+            };
+            result = format!("{}{}{}", &result[..pos], val_str, &result[close+1..]);
+        }
+    }
+    result
+}
+
 // ── PRINT ─────────────────────────────────────────────────────────────────────
 
 fn basic_print(ctx: &mut ExecContext, args: &str) -> ControlFlow {
@@ -451,7 +534,7 @@ fn basic_print(ctx: &mut ExecContext, args: &str) -> ControlFlow {
         if (part.contains('"') || part.contains('$')) && part.contains('+') {
             out.push_str(&eval_string(ctx, part));
         } else if part.starts_with('"') && part.ends_with('"') && part.len() >= 2 {
-            out.push_str(&part[1..part.len()-1]);
+            out.push_str(&ctx.interpolate(&part[1..part.len()-1]));
         } else if part.to_uppercase().ends_with('$') {
             // String variable (NAME$) — resolve as string, not numeric.
             out.push_str(&ctx.get_str(part));
@@ -459,8 +542,9 @@ fn basic_print(ctx: &mut ExecContext, args: &str) -> ControlFlow {
             // String function call: STR$(), CHR$(), LEFT$(), RIGHT$(), MID$()
             out.push_str(&eval_string(ctx, part));
         } else {
-            // Try numeric expression
-            match ctx.eval_expr(part) {
+            // Try numeric expression — resolve user-defined functions first
+            let resolved = resolve_basic_funcs(ctx, part);
+            match ctx.eval_expr(&resolved) {
                 Ok(v) => {
                     if v == v.floor() && v.abs() < 1e15 {
                         out.push_str(&format!("{}", v as i64));
@@ -598,7 +682,8 @@ fn basic_if_block(ctx: &mut ExecContext, args: &str) -> ControlFlow {
         args
     };
     let cond_val = ctx.eval_f64(cond_str.trim());
-    ctx.if_block_stack.push(cond_val != 0.0);
+    let cond = cond_val != 0.0;
+    ctx.if_block_stack.push((cond, cond));
     ControlFlow::Continue
 }
 

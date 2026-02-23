@@ -113,7 +113,7 @@ fn exec_query(ctx: &mut ExecContext, query: &str) -> ControlFlow {
         ctx.emit("false.\n");
     } else {
         // Extract variable bindings
-        let vars: Vec<String> = args.iter().filter(|a| is_var(a)).cloned().collect();
+        let vars: Vec<String> = args.iter().filter(|a| is_var(a) && *a != "_").cloned().collect();
         if vars.is_empty() {
             ctx.emit("true.\n");
         } else {

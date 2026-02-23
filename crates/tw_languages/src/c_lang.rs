@@ -35,7 +35,7 @@ pub fn execute_c(ctx: &mut ExecContext, command: &str) -> ControlFlow {
     if upper.starts_with("RETURN") {
         let rest = line[6..].trim();
         if !rest.is_empty() {
-            let v = ctx.eval_f64(rest);
+            let v = c_eval_f64(ctx, rest);
             ctx.set_var("RETURN", v);
         }
         return ControlFlow::Return;

@@ -164,10 +164,10 @@ pub struct ExecContext {
     pub select_matched:   bool,
 
     // ── Multi-line IF/THEN/ELSE/END IF ───────────────────────────────────
-    /// Stack for block-IF tracking.  Each entry = "currently executing body".
-    /// When any entry is `false`, lines are skipped until the matching
-    /// `ELSE` or `END IF` flips / pops it.
-    pub if_block_stack:   Vec<bool>,
+    /// Stack for block-IF tracking.  Each entry = (currently_executing, any_branch_taken).
+    /// When any entry's `executing` is `false`, lines are skipped until the matching
+    /// `ELSEIF`, `ELSE` or `END IF` updates / pops it.
+    pub if_block_stack:   Vec<(bool, bool)>,
 }
 
 impl Default for ExecContext {

@@ -184,10 +184,22 @@ pub fn execute_pascal(ctx: &mut ExecContext, command: &str) -> ControlFlow {
         let name = line.split('(').next().unwrap_or("").trim().to_uppercase();
         if ctx.subs.contains_key(&name) {
             let args_str = line.split('(').nth(1).unwrap_or("").trim_end_matches(')').trim_end_matches(';').trim();
-            let args: Vec<f64> = args_str.split(',')
-                .map(|a| ctx.eval_f64(a.trim()))
-                .collect();
+            let args: Vec<f64> = if args_str.is_empty() {
+                vec![]
+            } else {
+                args_str.split(',')
+                    .map(|a| pascal_eval_f64(ctx, a.trim()))
+                    .collect()
+            };
             return call_sub(ctx, &name, &args);
+        }
+    }
+
+    // ── parameterless procedure call ──────────────────────────────────────
+    {
+        let ident = line.trim().trim_end_matches(';').trim().to_uppercase();
+        if ctx.subs.contains_key(&ident) {
+            return call_sub(ctx, &ident, &[]);
         }
     }
 
@@ -195,6 +207,78 @@ pub fn execute_pascal(ctx: &mut ExecContext, command: &str) -> ControlFlow {
 }
 
 // ── write / writeln ───────────────────────────────────────────────────────────
+
+/// Evaluate a numeric expression, resolving user-defined Pascal functions first.
+fn pascal_eval_f64(ctx: &mut ExecContext, expr: &str) -> f64 {
+    let resolved = resolve_pascal_funcs(ctx, expr);
+    let resolved = resolved.replace('[', "(").replace(']', ")");
+    ctx.eval_f64(&resolved)
+}
+
+/// Resolve user-defined function calls in an expression string.
+/// E.g. "double(7) + 1" → "14 + 1" when double is a user function.
+fn resolve_pascal_funcs(ctx: &mut ExecContext, expr: &str) -> String {
+    let sub_names: Vec<String> = ctx.subs.keys().cloned().collect();
+    if sub_names.is_empty() { return expr.to_string(); }
+
+    let mut result = expr.to_string();
+    for name in &sub_names {
+        loop {
+            let upper_result = result.to_uppercase();
+            let pos = match upper_result.find(name.as_str()) {
+                Some(p) => p,
+                None => break,
+            };
+            let after_name = &result[pos + name.len()..];
+            if !after_name.trim_start().starts_with('(') { break; }
+
+            let open = pos + name.len() + after_name.find('(').unwrap();
+            let mut depth = 0i32;
+            let mut close = open;
+            for (j, ch) in result[open..].char_indices() {
+                if ch == '(' { depth += 1; }
+                if ch == ')' { depth -= 1; }
+                if depth == 0 { close = open + j; break; }
+            }
+
+            let args_str = &result[open + 1..close];
+            let args: Vec<f64> = if args_str.trim().is_empty() {
+                vec![]
+            } else {
+                args_str.split(',').map(|a| pascal_eval_f64(ctx, a.trim())).collect()
+            };
+
+            // Execute the function
+            let sub = match ctx.subs.get(name).cloned() {
+                Some(s) => s,
+                None => break,
+            };
+            let saved: Vec<(String, f64)> = sub.params.iter().enumerate().map(|(i, p)| {
+                let old = ctx.get_var(p);
+                ctx.set_var(p, args.get(i).copied().unwrap_or(0.0));
+                (p.clone(), old)
+            }).collect();
+
+            for line in &sub.body_lines {
+                match execute_pascal(ctx, line) {
+                    ControlFlow::Continue => {}
+                    ControlFlow::Return | ControlFlow::End => break,
+                    _ => break,
+                }
+            }
+            let ret_val = ctx.get_var(name);
+            for (p, v) in saved { ctx.set_var(&p, v); }
+
+            let val_str = if ret_val == ret_val.floor() && ret_val.abs() < 1e15 {
+                format!("{}", ret_val as i64)
+            } else {
+                format!("{ret_val}")
+            };
+            result = format!("{}{}{}", &result[..pos], val_str, &result[close + 1..]);
+        }
+    }
+    result
+}
 
 fn pascal_write(ctx: &mut ExecContext, line: &str, newline: bool) -> ControlFlow {
     let inner = extract_parens(line);
@@ -209,7 +293,7 @@ fn pascal_write(ctx: &mut ExecContext, line: &str, newline: bool) -> ControlFlow
             if !sval.is_empty() {
                 out.push_str(&sval);
             } else {
-                let v = ctx.eval_f64(part);
+                let v = pascal_eval_f64(ctx, part);
                 if v == v.floor() && v.abs() < 1e15 { out.push_str(&format!("{}", v as i64)); }
                 else { out.push_str(&format!("{v}")); }
             }
@@ -301,26 +385,29 @@ fn pascal_while(ctx: &mut ExecContext, line: &str) -> ControlFlow {
     ControlFlow::Continue
 }
 
-/// Skip forward past a matching BEGIN/END block.
+/// Skip forward past a matching BEGIN/END block or single statement.
 fn pascal_skip_to_end(ctx: &ExecContext) -> ControlFlow {
-    let mut depth = 1usize;
-    for i in ctx.line_idx + 1..ctx.program_lines.len() {
-        let (_, line) = &ctx.program_lines[i];
-        let up = line.trim().to_uppercase();
-        if up.starts_with("BEGIN") || up.starts_with("WHILE ")
-            || up.starts_with("FOR ") || up.starts_with("REPEAT")
-        {
-            depth += 1;
-        }
-        // "END" can appear as "END.", "END;" or standalone
-        if up == "END" || up == "END." || up == "END;" {
-            depth -= 1;
-            if depth == 0 {
-                return ControlFlow::Jump(i + 1);
+    let next = ctx.line_idx + 1;
+    if next >= ctx.program_lines.len() { return ControlFlow::End; }
+    let next_up = ctx.program_lines[next].1.trim().to_uppercase();
+    if next_up == "BEGIN" {
+        // Compound body: skip to matching END
+        let mut depth = 0i32;
+        for i in next..ctx.program_lines.len() {
+            let up = ctx.program_lines[i].1.trim().to_uppercase();
+            if up == "BEGIN" { depth += 1; }
+            if up == "END" || up == "END;" || up == "END." {
+                depth -= 1;
+                if depth == 0 {
+                    return ControlFlow::Jump(i + 1);
+                }
             }
         }
+        ControlFlow::End
+    } else {
+        // Single-statement body: skip one line
+        ControlFlow::Jump(next + 1)
     }
-    ControlFlow::End
 }
 
 // ── for … do ─────────────────────────────────────────────────────────────────
@@ -408,24 +495,27 @@ fn pascal_proc(ctx: &mut ExecContext, header: &str) -> ControlFlow {
         }).collect();
         (n, params)
     } else {
-        let n = rest.split_whitespace().next().unwrap_or("").trim_matches(':').to_uppercase();
+        let n = rest.split_whitespace().next().unwrap_or("").trim_matches(|c: char| c == ':' || c == ';').to_uppercase();
         (n, vec![])
     };
 
-    // Collect body until END;
+    // Collect body until matching END;
     let start = ctx.line_idx + 1;
     let mut body = Vec::new();
     let mut end_idx = ctx.program_lines.len();
-    let mut depth = 0usize;
+    let mut depth = 0i32;
     for i in start..ctx.program_lines.len() {
         let (_, line) = &ctx.program_lines[i];
         let up = line.trim().to_uppercase();
         if up == "BEGIN"  { depth += 1; }
         if up == "END" || up == "END;" || up == "END." {
-            if depth == 0 { end_idx = i; break; }
             depth -= 1;
+            if depth <= 0 { end_idx = i; break; }
         }
-        body.push(line.clone());
+        // Only collect lines inside the outermost BEGIN..END
+        if depth > 0 {
+            body.push(line.clone());
+        }
     }
 
     ctx.subs.insert(name.clone(), crate::context::SubDef { name: name.clone(), params, body_lines: body });

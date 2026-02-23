@@ -350,12 +350,27 @@ impl TurtleState {
 
     /// Draw an arc of `radius` pixels spanning `angle` degrees.
     pub fn arc(&mut self, radius: f64, angle: f64) {
+        let cx = self.x;
+        let cy = self.y;
+        let start_heading = self.heading;
         let steps = (angle.abs() / 5.0).max(4.0) as usize;
         let d_angle = angle / steps as f64;
         for _ in 0..steps {
             self.forward(2.0 * std::f64::consts::PI * radius / (360.0 / d_angle.abs()));
             self.right(d_angle);
         }
+        // Also record an Arc shape for rendering / shape-count queries
+        self.shapes.push(TurtleShape {
+            shape_type: ShapeType::Arc,
+            points: vec![(cx, cy)],
+            color: self.pen_color,
+            width: self.pen_width,
+            fill_color: None,
+            text: None,
+            font_size: 12,
+            align: "left".to_string(),
+            arc_data: Some([cx, cy, radius, start_heading, angle]),
+        });
     }
 
     /// Draw a dot at the current position with given radius and colour.

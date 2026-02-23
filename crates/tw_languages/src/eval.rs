@@ -384,7 +384,7 @@ fn apply_function(name: &str, stack: &mut Vec<f64>, arrays: &HashMap<String, Vec
         "LOG10"  => { let a = pop1(stack)?; stack.push(if a > 0.0 { a.log10() } else { 0.0 }); }
         "INT"    => { let a = pop1(stack)?; stack.push(a.floor()); }
         "FIX"    => { let a = pop1(stack)?; stack.push(a.trunc()); }
-        "SGN"    => { let a = pop1(stack)?; stack.push(a.signum()); }
+        "SGN"    => { let a = pop1(stack)?; stack.push(if a > 0.0 { 1.0 } else if a < 0.0 { -1.0 } else { 0.0 }); }
         "RAND" | "RND" => { stack.push(rand_f64()); }
         "RANDOM" => { let a = pop1(stack)?; stack.push(if a > 0.0 { (rand_f64() * a).floor() } else { 0.0 }); }
         "MIN"    => { let (a, b) = pop2(stack)?; stack.push(a.min(b)); }

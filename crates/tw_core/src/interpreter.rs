@@ -403,7 +403,120 @@ impl Interpreter {
         if matches!(self.state, RunState::Idle | RunState::Finished | RunState::Error(_)) {
             self.ctx.line_idx = 0;
         }
+        // BASIC: pre-scan for SUB/FUNCTION definitions so CALL works
+        // even when the sub appears after the call site.
+        if self.language == Language::Basic {
+            self.prescan_basic_subs();
+        }
+        // C: pre-scan for user-defined function definitions
+        if self.language == Language::C {
+            self.prescan_c_functions();
+        }
         self.state = RunState::Running;
+    }
+
+    /// Pre-scan BASIC program for SUB/FUNCTION definitions.
+    fn prescan_basic_subs(&mut self) {
+        let lines = &self.ctx.program_lines;
+        let mut i = 0;
+        while i < lines.len() {
+            let up = lines[i].1.trim().to_uppercase();
+            if up.starts_with("SUB ") || up.starts_with("FUNCTION ") {
+                let header = if up.starts_with("SUB ") {
+                    lines[i].1.trim()[4..].trim()
+                } else {
+                    lines[i].1.trim()[9..].trim()
+                };
+                let name_part = header.split('(').next().unwrap_or(header).trim().to_uppercase();
+                let params: Vec<String> = if let Some(op) = header.find('(') {
+                    if let Some(cp) = header.find(')') {
+                        header[op+1..cp]
+                            .split(',')
+                            .map(|p| p.trim().to_uppercase())
+                            .collect()
+                    } else { vec![] }
+                } else { vec![] };
+
+                let mut body = Vec::new();
+                let start = i + 1;
+                let mut end_idx = lines.len();
+                for j in start..lines.len() {
+                    let line_up = lines[j].1.trim().to_uppercase();
+                    if line_up == "END SUB" || line_up == "END FUNCTION" {
+                        end_idx = j;
+                        break;
+                    }
+                    body.push(lines[j].1.clone());
+                }
+
+                use tw_languages::context::SubDef;
+                self.ctx.subs.insert(name_part.clone(), SubDef {
+                    name: name_part,
+                    params,
+                    body_lines: body,
+                });
+                i = end_idx + 1;
+                continue;
+            }
+            i += 1;
+        }
+    }
+
+    /// Pre-scan C program for user-defined function definitions.
+    fn prescan_c_functions(&mut self) {
+        let lines = &self.ctx.program_lines;
+        let c_type_kw = ["INT", "FLOAT", "DOUBLE", "CHAR", "LONG", "SHORT", "UNSIGNED", "VOID", "CONST", "STATIC", "SIGNED"];
+        let mut i = 0;
+        while i < lines.len() {
+            let trimmed = lines[i].1.trim();
+            let up = trimmed.to_uppercase();
+            // Detect function definitions: type name(...) {
+            // Must contain '(' and end with '{', and not be main
+            if trimmed.ends_with('{') && trimmed.contains('(') {
+                let first_word = up.split_whitespace().next().unwrap_or("");
+                if c_type_kw.contains(&first_word) && !up.contains("MAIN") {
+                    // Extract function name
+                    let before_paren = trimmed.split('(').next().unwrap_or("");
+                    let name = before_paren.split_whitespace().last().unwrap_or("").to_uppercase();
+                    // Extract params
+                    let params_str = if let (Some(op), Some(cp)) = (trimmed.find('('), trimmed.find(')')) {
+                        &trimmed[op+1..cp]
+                    } else { "" };
+                    let params: Vec<String> = params_str.split(',')
+                        .map(|p| p.split_whitespace().last().unwrap_or("").to_uppercase())
+                        .filter(|p| !p.is_empty())
+                        .collect();
+
+                    // Collect body until matching '}'
+                    let mut body = Vec::new();
+                    let mut depth = 1i32;
+                    let start = i + 1;
+                    let mut end_idx = lines.len();
+                    for j in start..lines.len() {
+                        let line = lines[j].1.trim();
+                        for ch in line.chars() {
+                            if ch == '{' { depth += 1; }
+                            if ch == '}' { depth -= 1; }
+                        }
+                        if depth <= 0 {
+                            end_idx = j;
+                            break;
+                        }
+                        body.push(lines[j].1.clone());
+                    }
+
+                    use tw_languages::context::SubDef;
+                    self.ctx.subs.insert(name.clone(), SubDef {
+                        name,
+                        params,
+                        body_lines: body,
+                    });
+                    i = end_idx + 1;
+                    continue;
+                }
+            }
+            i += 1;
+        }
     }
 
     /// Stop and reset.
