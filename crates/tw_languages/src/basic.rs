@@ -390,6 +390,9 @@ fn basic_print(ctx: &mut ExecContext, args: &str) -> ControlFlow {
             out.push_str(&eval_string(ctx, part));
         } else if part.starts_with('"') && part.ends_with('"') && part.len() >= 2 {
             out.push_str(&part[1..part.len()-1]);
+        } else if part.to_uppercase().ends_with('$') {
+            // String variable (NAME$) — resolve as string, not numeric.
+            out.push_str(&ctx.get_str(part));
         } else {
             // Try numeric expression
             match ctx.eval_expr(part) {

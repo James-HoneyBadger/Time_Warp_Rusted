@@ -413,8 +413,14 @@ impl Interpreter {
 
     /// Provide user input and resume execution.
     pub fn provide_input(&mut self, text: &str) {
+        let had_request = !self.ctx.input_requests.is_empty();
         self.ctx.provide_input(text);
         if matches!(self.state, RunState::WaitingInput) {
+            // Advance past the INPUT/ACCEPT/scanf/readln statement so it
+            // isn't re-dispatched (which would create a new request loop).
+            if had_request && self.ctx.line_idx < self.ctx.program_lines.len() {
+                self.ctx.line_idx += 1;
+            }
             self.state = RunState::Running;
         }
     }
@@ -995,5 +1001,92 @@ ancestor(X, Y) :- parent(X, Z), ancestor(Z, Y).
 ?- parent(b, a).
 "#);
         assert!(out.contains("false"), "Expected 'false', got: {out:?}");
+    }
+
+    // ── INPUT tests ───────────────────────────────────────────────────────
+
+    /// Helper: run until WaitingInput, provide a response, then run to completion.
+    fn run_with_input(lang: Language, source: &str, inputs: &[&str]) -> (String, RunState) {
+        let mut interp = Interpreter::new(lang);
+        interp.load(source);
+        interp.run();
+        let mut input_idx = 0;
+        let mut total = 0;
+        loop {
+            if !interp.step_batch() { break; }
+            if matches!(interp.state, RunState::WaitingInput) {
+                if input_idx < inputs.len() {
+                    interp.provide_input(inputs[input_idx]);
+                    input_idx += 1;
+                } else {
+                    break; // no more inputs to provide
+                }
+            }
+            total += interp.batch_size;
+            if total > 50_000 { break; } // safety
+        }
+        (interp.output(), interp.state)
+    }
+
+    #[test]
+    fn basic_input_resumes_after_response() {
+        let source = r#"10 INPUT "Name: "; NAME$
+20 PRINT "Hello, "; NAME$
+30 END
+"#;
+        let (out, state) = run_with_input(Language::Basic, source, &["Alice"]);
+        assert!(matches!(state, RunState::Finished), "state={state:?}");
+        assert!(out.contains("Hello"), "Expected greeting in output, got: {out:?}");
+        assert!(out.contains("Alice"), "Expected 'Alice' in output, got: {out:?}");
+    }
+
+    #[test]
+    fn basic_input_numeric() {
+        let source = r#"10 INPUT "Number: "; N
+20 LET R = N * 2
+30 PRINT R
+40 END
+"#;
+        let (out, state) = run_with_input(Language::Basic, source, &["7"]);
+        assert!(matches!(state, RunState::Finished), "state={state:?}");
+        assert!(out.contains("14"), "Expected '14' in output, got: {out:?}");
+    }
+
+    #[test]
+    fn pilot_accept_resumes_after_response() {
+        let source = "T:What is your name?\nA:NAME\nT:Hello, #NAME!\nE:\n";
+        let (out, state) = run_with_input(Language::Pilot, source, &["Bob"]);
+        assert!(matches!(state, RunState::Finished), "state={state:?}");
+        assert!(out.contains("Hello, Bob"), "Expected 'Hello, Bob' in output, got: {out:?}");
+    }
+
+    #[test]
+    fn c_scanf_resumes_after_response() {
+        let source = r#"#include <stdio.h>
+int main() {
+    int x;
+    scanf("%d", &x);
+    printf("Got: %d\n", x);
+    return 0;
+}
+"#;
+        let (out, state) = run_with_input(Language::C, source, &["42"]);
+        assert!(matches!(state, RunState::Finished), "state={state:?}");
+        assert!(out.contains("Got: 42"), "Expected 'Got: 42' in output, got: {out:?}");
+    }
+
+    #[test]
+    fn pascal_readln_resumes_after_response() {
+        let source = r#"program Test;
+var
+  n : integer;
+begin
+  readln(n);
+  writeln('Value: ', n);
+end.
+"#;
+        let (out, state) = run_with_input(Language::Pascal, source, &["99"]);
+        assert!(matches!(state, RunState::Finished), "state={state:?}");
+        assert!(out.contains("Value: 99"), "Expected 'Value: 99' in output, got: {out:?}");
     }
 }
