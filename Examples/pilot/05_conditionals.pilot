@@ -1,0 +1,95 @@
+R: =============================================
+R: PILOT Example 05 — Conditionals
+R: Time Warp Studio
+R: =============================================
+R: PILOT conditionals work through M: (Match)
+R: combined with TY:/TN: (conditional output),
+R: Y:/N: (conditional jumps), and the verbose
+R: MATCH/CASE/DEFAULT/END block structure.
+
+T: ===========================
+T:   Conditionals in PILOT
+T: ===========================
+
+R: === Part 1: Classic TY/TN suffixes ===
+T:
+T: --- Conditional Suffixes ---
+T: Enter a password:
+A: PASS
+M: SECRET,PASSWORD,OPENSESAME
+TY: Access GRANTED!
+TN: Access DENIED!
+
+R: === Part 2: Verbose MATCH/CASE/DEFAULT/END ===
+PRINT
+PRINT --- Number Classifier ---
+ACCEPT SCORE Enter a test score (0 to 100)
+
+MATCH $SCORE
+  CASE [90-100]:
+    PRINT Grade: A - Excellent!
+    PRINT You are a top student!
+  CASE [80-89]:
+    PRINT Grade: B - Very Good!
+    PRINT Keep up the great work!
+  CASE [70-79]:
+    PRINT Grade: C - Good
+    PRINT You are on the right track.
+  CASE [60-69]:
+    PRINT Grade: D - Needs Improvement
+    PRINT Study a bit harder next time.
+  DEFAULT:
+    PRINT Grade: F - Please see the teacher
+    PRINT Do not give up!
+END
+
+R: === Part 3: MATCH with string values ===
+PRINT
+PRINT --- Day of the Week ---
+ACCEPT DAY What day is it
+
+MATCH $DAY
+  CASE Monday:
+    PRINT Start of the work week!
+  CASE Tuesday:
+    PRINT Taco Tuesday!
+  CASE Wednesday:
+    PRINT Hump day - halfway there!
+  CASE Thursday:
+    PRINT Almost Friday!
+  CASE Friday:
+    PRINT TGIF - weekend is here!
+  CASE Saturday:
+    PRINT Enjoy your Saturday!
+  CASE Sunday:
+    PRINT Rest and recharge!
+  DEFAULT:
+    PRINT I do not recognise that day.
+END
+
+R: === Part 4: Nested decision example ===
+PRINT
+PRINT --- Season Finder ---
+ACCEPT MONTH Enter a month number (1-12)
+
+MATCH $MONTH
+  CASE [3-5]:
+    PRINT It is Spring!
+    PRINT Flowers are blooming.
+  CASE [6-8]:
+    PRINT It is Summer!
+    PRINT Time for the beach.
+  CASE [9-11]:
+    PRINT It is Autumn!
+    PRINT Leaves are falling.
+  CASE [1-2]:
+    PRINT It is Winter!
+    PRINT Stay warm and cozy.
+  CASE 12:
+    PRINT It is Winter!
+    PRINT Holiday season!
+  DEFAULT:
+    PRINT That is not a valid month.
+END
+
+E:

@@ -1,0 +1,53 @@
+; ============================================
+; 09 - Fractals and Mathematical Art
+; Learn: Recursion, mathematical patterns
+; ============================================
+
+; Koch snowflake side
+TO KOCH :SIZE :DEPTH
+    IF :DEPTH < 1 [FORWARD :SIZE STOP]
+    KOCH (:SIZE / 3) (:DEPTH - 1)
+    LEFT 60
+    KOCH (:SIZE / 3) (:DEPTH - 1)
+    RIGHT 120
+    KOCH (:SIZE / 3) (:DEPTH - 1)
+    LEFT 60
+    KOCH (:SIZE / 3) (:DEPTH - 1)
+END
+
+; Sierpinski triangle side
+TO SIERPINSKI :SIZE :DEPTH
+    IF :DEPTH < 1 [
+        REPEAT 3 [FORWARD :SIZE RIGHT 120]
+        STOP
+    ]
+    SIERPINSKI (:SIZE / 2) (:DEPTH - 1)
+    FORWARD :SIZE / 2
+    SIERPINSKI (:SIZE / 2) (:DEPTH - 1)
+    BACKWARD :SIZE / 2
+    LEFT 60
+    FORWARD :SIZE / 2
+    RIGHT 60
+    SIERPINSKI (:SIZE / 2) (:DEPTH - 1)
+    LEFT 60
+    BACKWARD :SIZE / 2
+    RIGHT 60
+END
+
+; Draw Koch snowflake
+PENUP BACKWARD 60 LEFT 90 FORWARD 80 RIGHT 90 PENDOWN
+SETPENCOLOR "CYAN
+SETPENWIDTH 2
+REPEAT 3 [
+    KOCH 120 3
+    RIGHT 120
+]
+
+; Draw Sierpinski triangle
+PENUP HOME RIGHT 90 FORWARD 80 LEFT 90 BACKWARD 80 PENDOWN
+SETPENCOLOR "GOLD
+SETPENWIDTH 1
+SIERPINSKI 100 3
+
+HIDETURTLE
+PRINT [Fractals drawn!]

@@ -1,0 +1,28 @@
+; ============================================
+; 07 - Recursive Trees
+; Learn: Recursion, IF, STOP, natural forms
+; ============================================
+
+TO TREE :SIZE :ANGLE
+    IF :SIZE < 5 [ STOP ]
+    FORWARD :SIZE
+    LEFT :ANGLE
+    TREE (:SIZE * 0.7) :ANGLE
+    RIGHT (:ANGLE * 2)
+    TREE (:SIZE * 0.7) :ANGLE
+    LEFT :ANGLE
+    BACKWARD :SIZE
+END
+
+; Position at bottom center
+PENUP
+BACKWARD 100
+PENDOWN
+
+; Draw the tree
+SETPENCOLOR "GREEN
+SETPENWIDTH 2
+TREE 80 25
+
+HIDETURTLE
+PRINT [Recursive tree drawn!]

@@ -1,0 +1,94 @@
+; ============================================
+; 12 - Complete Logo Showcase
+; Demonstrates EVERY Logo feature
+; ============================================
+
+PRINT [==============================]
+PRINT [  Time Warp - Logo Showcase]
+PRINT [==============================]
+
+; --- Procedures ---
+TO STAR :SIZE
+    SETPENWIDTH 3
+    REPEAT 5 [FORWARD :SIZE RIGHT 144]
+END
+
+TO POLYGON :SIDES :SIZE
+    MAKE "A 360 / :SIDES
+    REPEAT :SIDES [FORWARD :SIZE RIGHT :A]
+END
+
+TO SPIRAL :STEPS :ANGLE
+    MAKE "D 2
+    REPEAT :STEPS [
+        FORWARD :D
+        RIGHT :ANGLE
+        MAKE "D :D + 2
+    ]
+END
+
+TO TREE :SIZE :ANGLE
+    IF :SIZE < 4 [STOP]
+    FORWARD :SIZE
+    LEFT :ANGLE
+    TREE (:SIZE * 0.65) :ANGLE
+    RIGHT (:ANGLE * 2)
+    TREE (:SIZE * 0.65) :ANGLE
+    LEFT :ANGLE
+    BACKWARD :SIZE
+END
+
+; --- Scene 1: Rainbow star ---
+SETPENCOLOR "RED
+STAR 80
+SETPENCOLOR "GOLD
+STAR 60
+SETPENCOLOR "YELLOW
+STAR 40
+
+; --- Scene 2: Filled hexagon ---
+PENUP RIGHT 90 FORWARD 150 LEFT 90 PENDOWN
+SETPENCOLOR "BLUE
+BEGINFILL "BLUE
+POLYGON 6 50
+ENDFILL
+
+; --- Scene 3: Spiral ---
+PENUP HOME LEFT 90 FORWARD 150 RIGHT 90 PENDOWN
+SETPENCOLOR "MAGENTA
+SETPENWIDTH 2
+SPIRAL 30 25
+
+; --- Scene 4: Tree ---
+PENUP HOME BACKWARD 100 LEFT 90 FORWARD 150 RIGHT 90 PENDOWN
+SETPENCOLOR "GREEN
+SETPENWIDTH 1
+TREE 60 30
+
+; --- Scene 5: Dots and labels ---
+PENUP HOME FORWARD 120 LEFT 90 FORWARD 60 RIGHT 90 PENDOWN
+SETPENCOLOR "CRIMSON
+DOT 10
+PENUP RIGHT 90 FORWARD 50 LEFT 90 PENDOWN
+SETPENCOLOR "TURQUOISE
+DOT 10
+PENUP RIGHT 90 FORWARD 50 LEFT 90 PENDOWN
+SETPENCOLOR "GOLD
+DOT 10
+
+; --- Scene 6: Positioning ---
+SETXY -200 130
+SETPENCOLOR "WHITE
+LABEL "Logo
+SETXY -200 115
+LABEL "Showcase
+
+; --- Scene 7: Arc ---
+PENUP SETXY 150 -100 PENDOWN
+SETPENCOLOR "ORANGE
+SETPENWIDTH 4
+ARC 50 270
+
+; --- Cleanup ---
+HIDETURTLE
+PRINT [All Logo features demonstrated!]

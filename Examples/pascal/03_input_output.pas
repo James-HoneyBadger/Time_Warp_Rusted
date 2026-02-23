@@ -1,42 +1,44 @@
-{
-  Input and Output
-  
-  Demonstrates:
-  - ReadLn for user input
-  - Write vs WriteLn
-  - Working with different data types
-  - Formatted output with :0:n
-}
+{ ============================================ }
+{ 03 - Input and Output                         }
+{ Learn: readln, write, writeln, formatting     }
+{ ============================================ }
 
-Program InputOutput;
-Var
-  name: String;
+program InputOutput;
+var
+  name: string;
   age: Integer;
-  height: Real;
-  ageInMonths: Integer;
+  num1, num2: Integer;
+begin
+  writeln('=== Interactive I/O ===');
+  writeln;
 
-Begin
-  WriteLn('=== Personal Information ===');
-  WriteLn;
-  
-  { Get user input }
-  Write('Enter your name: ');
-  ReadLn(name);
-  
-  Write('Enter your age: ');
-  ReadLn(age);
-  
-  Write('Enter your height in feet: ');
-  ReadLn(height);
-  
-  { Display formatted output }
-  WriteLn;
-  WriteLn('=== Your Information ===');
-  WriteLn('Name: ', name);
-  WriteLn('Age: ', age, ' years old');
-  WriteLn('Height: ', height:0:1, ' feet');
-  
-  { Calculate and display }
-  ageInMonths := age * 12;
-  WriteLn('Age in months: ', ageInMonths);
-End.
+  { String input }
+  write('What is your name? ');
+  readln(name);
+  writeln('Hello, ', name, '!');
+  writeln;
+
+  { Numeric input }
+  write('How old are you? ');
+  readln(age);
+  writeln('You will be ', age + 10, ' in ten years.');
+  writeln;
+
+  { Calculator }
+  writeln('=== Mini Calculator ===');
+  write('First number: ');
+  readln(num1);
+  write('Second number: ');
+  readln(num2);
+  writeln;
+  writeln('Results:');
+  writeln('  ', num1, ' + ', num2, ' = ', num1 + num2);
+  writeln('  ', num1, ' - ', num2, ' = ', num1 - num2);
+  writeln('  ', num1, ' * ', num2, ' = ', num1 * num2);
+  if num2 <> 0 then
+    writeln('  ', num1, ' / ', num2, ' = ', num1 / num2)
+  else
+    writeln('  Cannot divide by zero!');
+  writeln;
+  writeln('Thank you, ', name, '!');
+end.

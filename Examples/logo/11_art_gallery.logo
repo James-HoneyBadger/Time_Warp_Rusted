@@ -1,0 +1,67 @@
+; ============================================
+; 11 - Geometric Art Gallery
+; Learn: Combining everything for stunning art
+; ============================================
+
+; Flower of Life pattern
+TO PETAL :SIZE
+    REPEAT 2 [
+        ARC :SIZE 60
+        RIGHT 120
+    ]
+END
+
+TO FLOWER :SIZE :PETALS
+    REPEAT :PETALS [
+        PETAL :SIZE
+        RIGHT 360 / :PETALS
+    ]
+END
+
+; Rainbow wheel
+TO RAINBOW_WHEEL :SPOKES :LENGTH
+    REPEAT :SPOKES [
+        SETPENCOLOR REPCOUNT
+        FORWARD :LENGTH
+        BACKWARD :LENGTH
+        RIGHT 360 / :SPOKES
+    ]
+END
+
+; Mandala ring
+TO MANDALA_RING :COUNT :SIZE
+    REPEAT :COUNT [
+        REPEAT 4 [FORWARD :SIZE RIGHT 90]
+        RIGHT 360 / :COUNT
+    ]
+END
+
+; === Draw the gallery ===
+
+; Center flower
+SETPENCOLOR "MAGENTA
+SETPENWIDTH 2
+FLOWER 40 6
+
+; Rainbow wheel
+PENUP HOME RIGHT 90 FORWARD 150 LEFT 90 PENDOWN
+SETPENWIDTH 3
+RAINBOW_WHEEL 16 70
+
+; Mandala
+PENUP HOME LEFT 90 FORWARD 150 RIGHT 90 PENDOWN
+SETPENCOLOR "CYAN
+SETPENWIDTH 2
+MANDALA_RING 12 35
+
+; Spirograph pattern
+PENUP HOME BACKWARD 140 PENDOWN
+SETPENCOLOR "GOLD
+SETPENWIDTH 1
+REPEAT 36 [
+    REPEAT 4 [FORWARD 60 RIGHT 90]
+    RIGHT 10
+]
+
+HIDETURTLE
+PRINT [Art gallery complete!]

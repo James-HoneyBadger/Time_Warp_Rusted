@@ -1,95 +1,106 @@
-{
-  Procedures and Functions
-  
-  Demonstrates:
-  - Procedure declarations (no return value)
-  - Function declarations (with return value)
-  - Parameters (value and var)
-  - Local vs global variables
-}
+{ ============================================ }
+{ 06 - Procedures and Functions                 }
+{ Learn: procedure, function, parameters        }
+{ ============================================ }
 
-Program ProceduresAndFunctions;
-Var
-  num, result: Integer;
-  tempC, tempF: Real;
-
-{ Function: Returns the square of a number }
-Function Square(x: Integer): Integer;
-Begin
-  Square := x * x;
-End;
-
-{ Function: Returns maximum of two numbers }
-Function Max(a, b: Integer): Integer;
-Begin
-  If a > b Then
-    Max := a
-  Else
-    Max := b;
-End;
-
-{ Function: Convert Celsius to Fahrenheit }
-Function CelsiusToFahrenheit(c: Real): Real;
-Begin
-  CelsiusToFahrenheit := (c * 9.0 / 5.0) + 32.0;
-End;
-
-{ Procedure: Display a banner }
-Procedure PrintBanner(message: String);
-Var
-  i: Integer;
-Begin
-  { Top border }
-  For i := 1 To Length(message) + 4 Do
-    Write('=');
-  WriteLn;
-  
-  { Message }
-  WriteLn('| ', message, ' |');
-  
-  { Bottom border }
-  For i := 1 To Length(message) + 4 Do
-    Write('=');
-  WriteLn;
-End;
-
-{ Function: Calculate factorial }
-Function Factorial(n: Integer): Integer;
-Var
+program ProceduresAndFunctions;
+var
   i, result: Integer;
-Begin
-  result := 1;
-  For i := 2 To n Do
-    result := result * i;
-  Factorial := result;
-End;
 
-{ Main program }
-Begin
-  WriteLn('=== Function Examples ===');
-  WriteLn;
-  
-  { Using square function }
-  num := 5;
-  result := Square(num);
-  WriteLn('Square of ', num, ' = ', result);
-  
-  { Using max function }
-  WriteLn('Max of 15 and 23 = ', Max(15, 23));
-  
-  { Temperature conversion }
-  WriteLn;
-  tempC := 25.0;
-  tempF := CelsiusToFahrenheit(tempC);
-  WriteLn(tempC:0:1, '°C = ', tempF:0:1, '°F');
-  
-  { Using void procedure }
-  WriteLn;
-  PrintBanner('Welcome to Pascal!');
-  
-  { Factorial calculations }
-  WriteLn;
-  WriteLn('=== Factorials ===');
-  For num := 1 To 10 Do
-    WriteLn(num, '! = ', Factorial(num));
-End.
+procedure PrintLine(ch: string; count: Integer);
+var
+  i: Integer;
+begin
+  for i := 1 to count do
+    write(ch);
+  writeln;
+end;
+
+procedure PrintBanner(title: string);
+begin
+  PrintLine('=', 40);
+  writeln('  ', title);
+  PrintLine('=', 40);
+end;
+
+procedure PrintTriangle(rows: Integer);
+var
+  i, j: Integer;
+begin
+  for i := 1 to rows do
+  begin
+    for j := 1 to i do
+      write('* ');
+    writeln;
+  end;
+end;
+
+function Factorial(n: Integer): Integer;
+begin
+  if n <= 1 then
+    Factorial := 1
+  else
+    Factorial := n * Factorial(n - 1);
+end;
+
+function IsPrime(n: Integer): Integer;
+var
+  i, found: Integer;
+begin
+  if n < 2 then
+  begin
+    IsPrime := 0;
+  end
+  else
+  begin
+    found := 1;
+    for i := 2 to n - 1 do
+      if n mod i = 0 then
+        found := 0;
+    IsPrime := found;
+  end;
+end;
+
+function Power(base, exp: Integer): Integer;
+var
+  res, i: Integer;
+begin
+  res := 1;
+  for i := 1 to exp do
+    res := res * base;
+  Power := res;
+end;
+
+begin
+  PrintBanner('Procedures & Functions');
+  writeln;
+
+  { Triangle pattern }
+  writeln('--- Star Triangle ---');
+  PrintTriangle(5);
+  writeln;
+
+  { Factorials }
+  writeln('--- Factorials ---');
+  for i := 1 to 10 do
+    writeln('  ', i, '! = ', Factorial(i));
+  writeln;
+
+  { Prime numbers }
+  writeln('--- Primes up to 50 ---');
+  write('  ');
+  for i := 2 to 50 do
+    if IsPrime(i) = 1 then
+      write(i, ' ');
+  writeln;
+  writeln;
+
+  { Powers }
+  writeln('--- Powers of 2 ---');
+  for i := 0 to 10 do
+    writeln('  2^', i, ' = ', Power(2, i));
+  writeln;
+
+  PrintLine('-', 40);
+  writeln('Done!');
+end.

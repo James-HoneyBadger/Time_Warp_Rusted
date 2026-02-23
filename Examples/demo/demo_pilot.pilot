@@ -1,34 +1,275 @@
-T: Welcome to PILOT!
-T: PILOT is for computer-aided instruction
+R: =============================================
+R: Time Warp PILOT — Grand Demo
+R: A comprehensive PILOT showcase
+R: =============================================
+
+T: ############################################
+T: #                                          #
+T: #    TIME WARP PILOT - GRAND DEMO          #
+T: #                                          #
+T: ############################################
+
+R: === Section 1: Output Commands ===
 T:
-T: This demonstrates PILOT features
+T: === Section 1: Output (T: R: D:) ===
+T: T: is the Type command for output.
+D: D: is the Display command.
+R: R: is a Remark (this line is not shown).
+
+R: === Section 2: Verbose Output ===
+PRINT
+PRINT === Section 2: Verbose PRINT ===
+PRINT The PRINT keyword works in verbose mode.
+PRINT Semicolons suppress the newline:
+PRINT Value: ;
+PRINT 42
+
+R: === Section 3: Variables ===
+PRINT
+PRINT === Section 3: Variables ===
+C: A = 7
+C: B = 13
+C: SUM = A + B
+C: PRODUCT = A * B
+C: POWER = A * A
+T: Classic: A=#A, B=#B
+T: Sum=#SUM, Product=#PRODUCT, A^2=#POWER
+
+COMPUTE X 100
+COMPUTE Y 37
+COMPUTE TOTAL $X + $Y
+PRINT Verbose: X=$X, Y=$Y, Total=$TOTAL
+
+R: === Section 4: Input ===
+PRINT
+PRINT === Section 4: Interactive Input ===
+PRINT What is your name?
+A: NAME
+T: Hello, #NAME! Welcome to the demo.
+
+ACCEPT SUBJECT What is your favourite subject
+
+R: === Section 5: Pattern Matching ===
+PRINT
+PRINT === Section 5: Pattern Matching ===
+T: Do you like retro computing? (yes/no)
+A: ANSWER
+M: YES,Y,YEP,SURE,YEAH,ABSOLUTELY
+TY: Wonderful! You are a true retro fan!
+TN: Give it a chance - you might love it!
+
 T:
-T: PILOT Components:
-T: - T units for text output
-T: - A units for accepting input
-T: - J units for jumps/branching
+T: Name a Time Warp language:
+A: LANG
+M: BASIC,LOGO,PASCAL,C,FORTH,PILOT,PROLOG
+TY: Correct - that is a Time Warp language!
+M: *PILOT*
+TY: PILOT is the star of this demo!
+TN: Check the list: BASIC, Logo, Pascal, C, Forth, PILOT, Prolog
+
+R: === Section 6: MATCH/CASE Blocks ===
+PRINT
+PRINT === Section 6: MATCH/CASE Blocks ===
+ACCEPT SCORE Rate this demo (1-10)
+
+MATCH $SCORE
+  CASE 10:
+    PRINT PERFECT 10! You are too kind!
+  CASE [8-9]:
+    PRINT Excellent rating! Thank you!
+  CASE [6-7]:
+    PRINT Good - we will keep improving!
+  CASE [4-5]:
+    PRINT Fair - your feedback is noted.
+  CASE [1-3]:
+    PRINT We will try harder next time!
+  DEFAULT:
+    PRINT Please rate between 1 and 10.
+END
+
+R: === Section 7: Labels and Jumps ===
+PRINT
+PRINT === Section 7: Loops via Labels ===
+
+COMPUTE COUNT 5
+*LOOP_START
+PRINT Countdown: $COUNT
+COMPUTE COUNT $COUNT - 1
+MATCH $COUNT
+  CASE 0:
+    PRINT Liftoff!
+    JUMP LOOP_DONE
+  DEFAULT:
+    JUMP LOOP_START
+END
+
+*LOOP_DONE
+
+R: Powers of 2
+PRINT
+PRINT Powers of 2:
+COMPUTE P 1
+COMPUTE N 0
+
+*POWER_LP
+PRINT   2^$N = $P
+COMPUTE P $P * 2
+COMPUTE N $N + 1
+MATCH $N
+  CASE [0-10]:
+    JUMP POWER_LP
+  DEFAULT:
+    PRINT Done!
+END
+
+R: === Section 8: Subroutines ===
+PRINT
+PRINT === Section 8: Subroutines ===
+TU DRAW_BOX
+PRINT
+COMPUTE V 7
+TU SQUARE_IT
+PRINT $V squared = $RESULT-SQ
+COMPUTE V 12
+TU SQUARE_IT
+PRINT $V squared = $RESULT-SQ
+
+R: === Section 9: Conditional Jumps ===
+PRINT
+PRINT === Section 9: Conditional Branching ===
+T: Is $SUBJECT a STEM subject? (yes/no)
+A: STEM
+M: YES,Y
+Y: STEM_YES
+N: STEM_NO
+J: STEM_DONE
+
+*STEM_YES
+T: Great! STEM subjects pair well with coding!
+J: STEM_DONE
+
+*STEM_NO
+T: No worries - all subjects benefit from logic!
+
+*STEM_DONE
+
+R: === Section 10: Arithmetic ===
+PRINT
+PRINT === Section 10: Arithmetic Showcase ===
+COMPUTE A 144
+COMPUTE B 12
+COMPUTE ADD $A + $B
+COMPUTE SUB $A - $B
+COMPUTE MUL $A * $B
+COMPUTE DIV $A / $B
+PRINT $A + $B = $ADD
+PRINT $A - $B = $SUB
+PRINT $A * $B = $MUL
+PRINT $A / $B = $DIV
+
+R: Fibonacci
+PRINT
+PRINT Fibonacci sequence:
+COMPUTE F1 0
+COMPUTE F2 1
+PRINT   $F1
+PRINT   $F2
+COMPUTE F3 $F1 + $F2
+PRINT   $F3
+COMPUTE F4 $F2 + $F3
+PRINT   $F4
+COMPUTE F5 $F3 + $F4
+PRINT   $F5
+COMPUTE F6 $F4 + $F5
+PRINT   $F6
+COMPUTE F7 $F5 + $F6
+PRINT   $F7
+COMPUTE F8 $F6 + $F7
+PRINT   $F8
+
+R: === Section 11: Quiz Application ===
+PRINT
+PRINT === Section 11: Mini Quiz ===
+COMPUTE QUIZ_SCORE 0
+
+T: Q1: What year was the first computer built?
+T:   (a) 1936  (b) 1945  (c) 1951
+A: Q1
+M: B,1945
+TY: Correct! ENIAC was completed in 1945.
+C: QUIZ_SCORE = QUIZ_SCORE + 1
+TN: The answer is (b) 1945.
+
+T: Q2: What does CPU stand for?
+A: Q2
+M: CENTRAL PROCESSING UNIT,*CENTRAL*PROCESSING*
+TY: Correct!
+C: QUIZ_SCORE = QUIZ_SCORE + 1
+TN: It stands for Central Processing Unit.
+
+T: Q3: Who created the World Wide Web?
+A: Q3
+M: TIM BERNERS-LEE,*BERNERS*,TIM*
+TY: Correct! Tim Berners-Lee invented the WWW.
+C: QUIZ_SCORE = QUIZ_SCORE + 1
+TN: It was Tim Berners-Lee.
+
 T:
-T: Let's start with a simple exercise.
-T:
-T: What is 2 + 2?
-A: [ANSWER]
-C: (ANSWER = 4) or (ANSWER = four)
-J: Y: CORRECT
-J: N: INCORRECT
-T: Correct! Good work.
-J: END
-T: Not quite. 2 + 2 = 4.
-J: END
-T:
-T: Now another question:
-T: What is the capital of France?
-A: [ANSWER]
-C: (ANSWER = Paris) or (ANSWER = paris)
-J: Y: GREAT
-J: N: TRYAGAIN
-T: Excellent! Paris is correct.
-J: END
-T: The answer is Paris.
-J: END
-T:
-T: Demo complete! Good work.
+T: Quiz Score: #QUIZ_SCORE out of 3
+
+MATCH $QUIZ_SCORE
+  CASE 3:
+    PRINT Perfect! You are a computer history expert!
+  CASE 2:
+    PRINT Well done!
+  CASE 1:
+    PRINT Not bad - keep learning!
+  CASE 0:
+    PRINT Study up and try again!
+  DEFAULT:
+    PRINT Thanks for playing!
+END
+
+R: === Finale ===
+PRINT
+TU FINAL_BANNER
+JUMP THE_END
+
+R: --- Subroutine definitions ---
+
+*DRAW_BOX
+RULE DRAW_BOX
+PRINT +----------------------------+
+PRINT |    PILOT SUBROUTINE BOX    |
+PRINT +----------------------------+
+RETURN
+
+*SQUARE_IT
+RULE SQUARE_IT
+COMPUTE RESULT-SQ $V * $V
+RETURN
+
+*FINAL_BANNER
+RULE FINAL_BANNER
+T: ############################################
+T: #                                          #
+T: #    PILOT GRAND DEMO COMPLETE!            #
+T: #                                          #
+T: #  Commands demonstrated:                  #
+T: #    R: T: D: A: M: C: J: U: E:           #
+T: #    Y: N: TY: TN:                         #
+T: #    PRINT ACCEPT COMPUTE                  #
+T: #    MATCH/CASE/DEFAULT/END                #
+T: #    JUMP TU RULE RETURN                   #
+T: #    Labels (*NAME)                        #
+T: #    #VAR and $VAR interpolation           #
+T: #    Wildcard matching (*)                 #
+T: #    Range matching [low-high]             #
+T: #    Subroutines                           #
+T: #    Interactive quiz                      #
+T: #                                          #
+T: ############################################
+RETURN
+
+*THE_END
+E:

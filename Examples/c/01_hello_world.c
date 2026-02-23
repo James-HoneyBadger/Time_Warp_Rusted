@@ -1,19 +1,26 @@
-/*
- * HELLO WORLD - Your First C Program
- * 
- * This program demonstrates:
- * - Standard C program structure
- * - Including the stdio library
- * - The main function
- * - Output with printf()
- * - Return value from main()
- */
+/* ============================================
+ * 01 - Hello World & Program Structure
+ * Learn: printf, #include, main, return
+ * ============================================ */
 
 #include <stdio.h>
 
 int main() {
+    printf("================================\n");
+    printf("  Welcome to Time Warp Studio!\n");
+    printf("================================\n");
+    printf("\n");
     printf("Hello, World!\n");
-    printf("Welcome to C programming!\n");
-    printf("Time Warp Studio supports C language.\n");
+    printf("\n");
+    printf("Every C program has:\n");
+    printf("  1. #include directives\n");
+    printf("  2. A main() function\n");
+    printf("  3. Statements ending with ;\n");
+    printf("\n");
+
+    /* This is a block comment */
+    // This is a line comment
+
+    printf("Program complete!\n");
     return 0;
 }

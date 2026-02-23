@@ -1,0 +1,83 @@
+R: =============================================
+R: PILOT Example 04 — Pattern Matching
+R: Time Warp Studio
+R: =============================================
+R: M: (Match) compares the last A: input
+R: against a comma-separated list of patterns.
+R: Wildcards (*) are supported.
+R: TY: executes only if last match succeeded.
+R: TN: executes only if last match failed.
+
+T: ===========================
+T:   Pattern Matching Demo
+T: ===========================
+
+R: --- Simple matching ---
+T:
+T: Do you like programming? (yes/no)
+A: ANSWER
+M: YES,Y,YEP,SURE,YEAH,ABSOLUTELY
+TY: Great! Programming is awesome!
+TN: That's okay, maybe PILOT will change your mind!
+
+R: --- Wildcard matching ---
+T:
+T: What is your favourite language?
+A: LANG
+M: *PILOT*
+TY: Excellent choice - PILOT is wonderful!
+TN: That's a fine language too.
+
+M: *BASIC*,*PASCAL*,*FORTH*
+TY: You chose a classic retro language!
+
+M: *C*,*PYTHON*,*JAVA*
+TY: A popular modern choice!
+
+R: --- Multiple rounds ---
+T:
+T: Name an animal:
+A: ANIMAL
+M: CAT,KITTEN,KITTY
+TY: Meow! Cats are adorable.
+TN: Let me check further...
+
+M: DOG,PUPPY,DOGGY
+TY: Woof! Dogs are loyal friends.
+
+M: *FISH*
+TY: Blub blub! Fish are relaxing to watch.
+
+M: *BIRD*,PARROT,EAGLE,ROBIN
+TY: Tweet tweet! Birds are beautiful.
+
+R: If nothing matched above
+TN: Interesting animal choice!
+
+R: --- Conditional jumps with Y: and N: ---
+T:
+T: Are you a student? (yes/no)
+A: RESPONSE
+M: YES,Y,YEP
+Y: STUDENT
+N: TEACHER
+J: DONE
+
+*STUDENT
+T:
+T: Welcome, student!
+T: PILOT was designed to help you learn.
+T: Keep practising and you will do great!
+J: DONE
+
+*TEACHER
+T:
+T: Welcome, teacher!
+T: PILOT is a perfect tool for creating
+T: interactive lessons for your class.
+
+*DONE
+T:
+T: Thank you for trying pattern matching!
+
+E:

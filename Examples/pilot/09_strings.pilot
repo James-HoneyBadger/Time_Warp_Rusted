@@ -1,0 +1,81 @@
+R: =============================================
+R: PILOT Example 09 — String Interpolation
+R: Time Warp Studio
+R: =============================================
+R: Classic mode uses #VAR in T: output.
+R: Verbose mode uses $VAR in PRINT and
+R: COMPUTE expressions.
+R: Both support inline variable substitution.
+
+T: ===================================
+T:   String Interpolation in PILOT
+T: ===================================
+
+R: === Classic #VAR interpolation ===
+T:
+T: --- Classic Mode ---
+C: NAME = 0
+T: What is your name?
+A: NAME
+C: AGE = 0
+T: How old are you?
+A: AGE
+
+T:
+T: Hello, #NAME!
+T: You are #AGE years old.
+
+C: BIRTH = 2025 - AGE
+T: You were born around #BIRTH.
+
+C: DOG_YEARS = AGE * 7
+T: In dog years, you would be #DOG_YEARS!
+
+R: === Verbose $VAR interpolation ===
+PRINT
+PRINT --- Verbose Mode ---
+ACCEPT CITY What city do you live in
+ACCEPT FOOD What is your favourite food
+
+PRINT
+PRINT You live in $CITY and love $FOOD.
+PRINT Here is a story about you:
+PRINT
+PRINT Once upon a time in $CITY,
+PRINT #NAME discovered a magical restaurant
+PRINT that served the best $FOOD in the world.
+PRINT Everyone in $CITY came to try it,
+PRINT and #NAME became famous!
+
+R: === Computed values in strings ===
+PRINT
+PRINT --- Computed Values ---
+COMPUTE LENGTH 5
+COMPUTE WIDTH 3
+COMPUTE AREA $LENGTH * $WIDTH
+COMPUTE PERIMETER 2 * ($LENGTH + $WIDTH)
+
+PRINT A rectangle of $LENGTH x $WIDTH:
+PRINT   Area:      $AREA square units
+PRINT   Perimeter: $PERIMETER units
+
+R: === Building up text with variables ===
+PRINT
+PRINT --- Variable Chains ---
+COMPUTE A 10
+COMPUTE B $A + 5
+COMPUTE C $B + 5
+COMPUTE D $C + 5
+PRINT Sequence: $A, $B, $C, $D
+COMPUTE TOTAL $A + $B + $C + $D
+PRINT Sum of sequence: $TOTAL
+
+R: === Mixed classic and verbose ===
+T:
+T: --- Final Summary ---
+T: Name: #NAME, Age: #AGE
+PRINT City: $CITY, Food: $FOOD
+PRINT
+PRINT All interpolation styles demonstrated!
+
+E:

@@ -1,64 +1,61 @@
-REMARK ================================================
-REMARK VARIABLES AND OUTPUT
-REMARK ================================================
+R: =============================================
+R: PILOT Example 02 — Variables & Computation
+R: Time Warp Studio
+R: =============================================
+R: PILOT supports numeric variables via C:
+R: (Compute) and variable display via #VAR
+R: interpolation in classic mode, or $VAR
+R: in verbose mode.
 
-REMARK Set some variables
-ACCEPT name User, what is your name?
-ACCEPT age What is your age?
-ACCEPT city What city are you from?
+R: === Classic Syntax: C: command ===
+T: --- Classic Variable Assignment ---
+C: X = 10
+C: Y = 25
+C: SUM = X + Y
+C: DIFF = X - Y
+C: PRODUCT = X * Y
+
+T: X = #X
+T: Y = #Y
+T: Sum      = #SUM
+T: Difference = #DIFF
+T: Product  = #PRODUCT
+
+R: Expressions can use math
+C: RADIUS = 5
+C: AREA = 3.14159 * RADIUS * RADIUS
+C: CIRCUMF = 2 * 3.14159 * RADIUS
+T:
+T: --- Circle Calculations ---
+T: Radius        = #RADIUS
+T: Area          = #AREA
+T: Circumference = #CIRCUMF
+
+R: === Verbose Syntax: COMPUTE command ===
+PRINT
+PRINT --- Verbose Variable Assignment ---
+COMPUTE A 100
+COMPUTE B 37
+COMPUTE TOTAL $A + $B
+COMPUTE HALF $TOTAL / 2
+
+PRINT A     = $A
+PRINT B     = $B
+PRINT Total = $TOTAL
+PRINT Half  = $HALF
 
 PRINT
-PRINT Welcome!
-PRINT Your Information:
-PRINT ─────────────────
-PRINT Name: $name
-PRINT Age: $age
-PRINT City: $city
-PRINT
+PRINT --- Temperature Conversion ---
+COMPUTE CELSIUS 100
+COMPUTE FAHRENHEIT $CELSIUS * 9 / 5 + 32
+PRINT $CELSIUS degrees Celsius = $FAHRENHEIT degrees Fahrenheit
 
-REMARK Processing the data
-ACCEPT response Are you happy with this information? (yes/no)
-MATCH $response
-    CASE yes:
-        PRINT Great! Thank you for confirming.
-        PRINT
-        TU student_info
-    CASE no:
-        PRINT Let's correct the information
-        TU student_info
-END
+COMPUTE CELSIUS 0
+COMPUTE FAHRENHEIT $CELSIUS * 9 / 5 + 32
+PRINT $CELSIUS degrees Celsius = $FAHRENHEIT degrees Fahrenheit
 
-RULE student_info:
-    PRINT Restarting...
-    JUMP student_info
-STOP
+COMPUTE CELSIUS 37
+COMPUTE FAHRENHEIT $CELSIUS * 9 / 5 + 32
+PRINT $CELSIUS degrees Celsius = $FAHRENHEIT degrees Fahrenheit
 
-JUMP start_here
-RULE start_here:
-    ACCEPT confirm Start the program? (yes/no)
-    MATCH $confirm
-        CASE yes:
-            TU main_program
-        CASE no:
-            PRINT Goodbye!
-            STOP
-    END
-STOP
-
-RULE main_program:
-    ACCEPT first First number:
-    ACCEPT second Second number:
-    
-    PRINT
-    PRINT Calculations:
-    PRINT ─────────────
-    COMPUTE sum $first + $second
-    PRINT Sum: $sum
-    COMPUTE diff $first - $second
-    PRINT Difference: $diff
-    COMPUTE prod $first * $second
-    PRINT Product: $prod
-    COMPUTE quotient $first / $second
-    PRINT Quotient: $quotient
-    PRINT
-STOP
+E:

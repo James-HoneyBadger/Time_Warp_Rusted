@@ -1,0 +1,30 @@
+; ============================================
+; 02 - Variables and Arithmetic
+; Learn: MAKE, :var, arithmetic, PRINT
+; ============================================
+
+; Variables are created with MAKE and read with :
+MAKE "SIZE 100
+MAKE "NAME [Time Warp]
+MAKE "PI 3.14159
+
+PRINT [=== Variables ===]
+PRINT :SIZE
+PRINT :NAME
+PRINT :PI
+
+; Arithmetic in expressions
+MAKE "RADIUS 50
+MAKE "AREA :PI * :RADIUS * :RADIUS
+MAKE "CIRCUMFERENCE 2 * :PI * :RADIUS
+
+PRINT []
+PRINT [=== Circle Math ===]
+PRINT :AREA
+PRINT :CIRCUMFERENCE
+
+; Draw a square using the SIZE variable
+PRINT []
+PRINT [Drawing square with size:]
+PRINT :SIZE
+REPEAT 4 [FORWARD :SIZE RIGHT 90]

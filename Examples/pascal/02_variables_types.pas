@@ -1,44 +1,47 @@
-{
-  Variables and Data Types
-  
-  Demonstrates:
-  - Variable declarations (Var section)
-  - Different types: Integer, Real, Char, String
-  - Assignment with :=
-  - Formatted output
-}
+{ ============================================ }
+{ 02 - Variables and Types                      }
+{ Learn: var, const, integer, string, assign    }
+{ ============================================ }
 
-Program VariablesAndTypes;
-Var
+program VariablesAndTypes;
+var
   age: Integer;
-  price: Real;
-  grade: Char;
-  name: String;
-  year: Integer;
-  temperature: Real;
+  height: Integer;
+  name: string;
+  greeting: string;
+const
+  PI = 3.14159;
+  GRAVITY = 9.81;
+  SCHOOL = 'Time Warp Academy';
+begin
+  writeln('=== Variables & Types ===');
+  writeln;
 
-Begin
-  { Initialize variables }
-  name := 'Alice';
-  age := 25;
-  grade := 'A';
-  year := 2025;
-  price := 19.99;
-  temperature := 72.5;
-  
-  WriteLn('=== Variable Examples ===');
-  WriteLn;
-  
-  WriteLn('Name: ', name);
-  WriteLn('Age: ', age, ' years');
-  WriteLn('Grade: ', grade);
-  WriteLn('Year: ', year);
-  WriteLn('Price: $', price:0:2);
-  WriteLn('Temperature: ', temperature:0:1, '°F');
-  
-  { Arithmetic operations }
-  WriteLn;
-  WriteLn('Calculations:');
-  WriteLn('Next year: ', year + 1);
-  WriteLn('Two items: $', (price * 2):0:2);
-End.
+  { Integer variables }
+  age := 15;
+  height := 165;
+  writeln('Age: ', age);
+  writeln('Height: ', height, ' cm');
+  writeln;
+
+  { String variables }
+  name := 'Pascal Student';
+  greeting := 'Hello, ';
+  writeln(greeting, name, '!');
+  writeln;
+
+  { Constants }
+  writeln('=== Constants ===');
+  writeln('PI = ', PI);
+  writeln('Gravity = ', GRAVITY, ' m/s^2');
+  writeln('School: ', SCHOOL);
+  writeln;
+
+  { Arithmetic }
+  writeln('=== Math ===');
+  writeln('25 + 7 = ', 25 + 7);
+  writeln('25 - 7 = ', 25 - 7);
+  writeln('25 * 7 = ', 25 * 7);
+  writeln('25 / 7 = ', 25 / 7);
+  writeln('Circle area (r=10): ', PI * 10 * 10);
+end.

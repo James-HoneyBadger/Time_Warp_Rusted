@@ -1,0 +1,41 @@
+R: =============================================
+R: PILOT Example 03 — Input & Output
+R: Time Warp Studio
+R: =============================================
+R: A: (Accept) reads user input.
+R: T: (Type) and D: (Display) output text.
+R: In verbose mode: ACCEPT and PRINT.
+
+R: === Classic Syntax ===
+T: ===========================
+T:   PILOT Input / Output
+T: ===========================
+T:
+T: What is your name?
+A: NAME
+T: Hello, #NAME! Nice to meet you.
+T:
+T: How old are you?
+A: AGE
+C: FUTURE = AGE + 10
+T: You are #AGE years old.
+T: In 10 years you will be #FUTURE!
+
+R: === Verbose Syntax ===
+PRINT
+PRINT ===========================
+PRINT   Verbose Input / Output
+PRINT ===========================
+PRINT
+ACCEPT COLOUR What is your favourite colour
+PRINT Your favourite colour is $COLOUR
+PRINT
+ACCEPT NUMBER Pick a number between 1 and 100
+COMPUTE DOUBLED $NUMBER * 2
+COMPUTE SQUARED $NUMBER * $NUMBER
+PRINT
+PRINT You picked: $NUMBER
+PRINT Doubled:    $DOUBLED
+PRINT Squared:    $SQUARED
+
+E:

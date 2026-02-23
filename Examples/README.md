@@ -1,39 +1,38 @@
-# Examples
+# Time Warp Studio — Example Programs
 
-Sample programs for each of the seven languages supported by Time Warp Studio.
+Welcome to the **Time Warp Studio** example collection! These programs demonstrate
+every feature of each supported language — from simple "Hello World" to advanced
+turtle graphics, IoT control, and algorithmic showcases.
 
-## Directory Structure
+## Languages
 
-```
-Examples/
-  basic/     BASIC programs         (.bas)
-  c/         C programs             (.c)
-  forth/     Forth programs         (.fth / .f)
-  logo/      Logo programs          (.logo)
-  pascal/    Pascal programs        (.pas)
-  pilot/     PILOT programs         (.pilot)
-  prolog/    Prolog programs        (.pro)
-  demo/      One demo per language  (mixed)
-  fixtures/  Expected output files  (.in)
-```
+| Folder | Language | Programs | Description |
+|--------|----------|----------|-------------|
+| `basic/` | Turbo BASIC | 12 | Variables, loops, graphics, string functions, arrays, IoT |
+| `logo/` | Logo | 12 | Turtle graphics, recursion, fractals, colour art |
+| `pascal/` | Pascal | 10 | Structured programming, procedures, algorithms |
+| `c/` | C (Subset) | 10 | Systems concepts, printf, loops, functions |
+| `forth/` | Forth | 10 | Stack-based programming, word definitions, loops |
+| `pilot/` | PILOT | 10 | Educational scripting, quizzes, pattern matching |
+| `prolog/` | Prolog | 10 | Logic programming, facts, rules, queries |
+| `demo/` | Mixed | 7 | One showcase per language — the "best of" collection |
 
-## Running Examples
+## How to Run
 
-Load any file through the **Examples** tab in the left panel of the IDE, or open the file in the editor and press **Run** (F5).
+1. Open **Time Warp Studio**
+2. Select a language from the toolbar
+3. Paste or load an example program into the editor
+4. Click **▶ Run**
 
-## Language / Extension Reference
+## Difficulty Levels
 
-| Language | Extension | Notes |
-|----------|-----------|-------|
-| BASIC    | `.bas`    | Line-numbered or free-format |
-| PILOT    | `.pilot`  | CAI interaction language |
-| Logo     | `.logo`   | Turtle geometry |
-| C        | `.c`      | Subset interpreter |
-| Pascal   | `.pas`    | Borland/ISO subset |
-| Prolog   | `.pro`    | Facts, rules, queries |
-| Forth    | `.fth` `.f` | Stack machine |
+Each language folder is numbered from beginner to advanced:
+- `01-03` — **Beginner**: Fundamentals, syntax, output
+- `04-06` — **Intermediate**: Control flow, functions, input
+- `07-09` — **Advanced**: Graphics, arrays, algorithms
+- `10-12` — **Expert**: Full showcases, IoT, comprehensive demos
 
-## Adding Examples
+## See Also
 
-1. Create a file in the appropriate subdirectory.
-2. Add an entry to `builtin_examples()` in `crates/tw_ui/src/feature_panels.rs` so it appears in the browser.
+- `tutorials/` — Structured lesson plans for students and teachers
+- `docs/USER_GUIDE.md` — Full Time Warp Studio documentation

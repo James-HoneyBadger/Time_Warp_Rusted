@@ -1,55 +1,70 @@
-10 REM ================================================
-20 REM CONDITIONAL STATEMENTS (IF/THEN/ELSE)
-30 REM ================================================
-40 PRINT "===== SIMPLE IF STATEMENT ====="
-50 LET X = 50
-60 IF X > 0 THEN PRINT "X is positive"
-70 IF X < 0 THEN PRINT "X is negative"
-80 IF X = 0 THEN PRINT "X is zero"
-90 
-100 PRINT ""
-110 PRINT "===== IF/ELSE STATEMENTS ====="
-120 LET AGE = 25
-130 IF AGE >= 18 THEN
-140     PRINT AGE; " years old: You are an adult"
-150 ELSE
-160     PRINT AGE; " years old: You are a minor"
-170 END IF
-180 
-190 PRINT ""
-200 PRINT "===== MULTIPLE CONDITIONS ====="
-210 LET GRADE = 85
-220 IF GRADE >= 90 THEN
-230     PRINT "Grade A (Excellent)"
-240 ELSE
-250     IF GRADE >= 80 THEN
-260         PRINT "Grade B (Good)"
-270     ELSE
-280         IF GRADE >= 70 THEN
-290             PRINT "Grade C (Fair)"
-300         ELSE
-310             PRINT "Grade F (Needs Improvement)"
-320         END IF
-330     END IF
-340 END IF
-350 
-360 PRINT ""
-370 PRINT "===== LOGICAL OPERATORS ====="
-380 LET X = 50
-390 LET Y = 30
-400 
-410 IF X > 40 AND Y > 20 THEN PRINT "Both conditions true"
-420 IF X > 40 OR Y < 10 THEN PRINT "At least one condition true"
-430 IF NOT (X < 40) THEN PRINT "X is NOT less than 40"
-440 
-450 PRINT ""
-460 PRINT "===== COMPARISON EXAMPLES ====="
-470 FOR I = 1 TO 10
-480     IF I MOD 2 = 0 THEN
-490         PRINT STR$(I) + " is even"
-500     ELSE
-510         PRINT STR$(I) + " is odd"
-520     END IF
-530 NEXT I
-540 
-550 END
+REM ============================================
+REM  05 - Conditionals
+REM  Learn: IF/THEN/ELSE, block IF, SELECT CASE
+REM ============================================
+
+10 PRINT "=== Conditionals ==="
+20 PRINT
+
+30 REM Single-line IF/THEN/ELSE
+40 LET SCORE = 85
+50 IF SCORE >= 90 THEN PRINT "Grade: A" ELSE PRINT "Grade: Below A"
+60 PRINT
+
+70 REM Multi-line IF/THEN/ELSE block
+80 PRINT "Checking score "; SCORE; ":"
+90 IF SCORE >= 90 THEN
+100    PRINT "  Outstanding! Grade A"
+110    PRINT "  You made the honor roll!"
+120 ELSEIF SCORE >= 80 THEN
+130    PRINT "  Great work! Grade B"
+140    PRINT "  Keep it up!"
+150 ELSEIF SCORE >= 70 THEN
+160    PRINT "  Good job! Grade C"
+170 ELSEIF SCORE >= 60 THEN
+180    PRINT "  Grade D - study harder"
+190 ELSE
+200    PRINT "  Grade F - see teacher"
+210 END IF
+220 PRINT
+
+230 REM Nested IF blocks
+240 LET AGE = 16
+250 LET HAS_LICENSE = 0
+260 IF AGE >= 16 THEN
+270    PRINT "Old enough to drive."
+280    IF HAS_LICENSE = 1 THEN
+290       PRINT "You have a license - drive safe!"
+300    ELSE
+310       PRINT "But you need a license first."
+320    END IF
+330 ELSE
+340    PRINT "Too young to drive."
+350 END IF
+360 PRINT
+
+370 REM Logical operators
+380 LET X = 15
+390 IF X > 10 AND X < 20 THEN PRINT X; " is between 10 and 20"
+400 IF X = 10 OR X = 15 THEN PRINT X; " is either 10 or 15"
+410 IF NOT (X > 20) THEN PRINT X; " is not greater than 20"
+420 PRINT
+
+430 REM SELECT CASE
+440 LET DAY = 3
+450 PRINT "Day "; DAY; " of the week:"
+460 SELECT CASE DAY
+470 CASE 1
+480    PRINT "  Monday"
+490 CASE 2
+500    PRINT "  Tuesday"
+510 CASE 3
+520    PRINT "  Wednesday"
+530 CASE 4
+540    PRINT "  Thursday"
+550 CASE 5
+560    PRINT "  Friday"
+570 CASE ELSE
+580    PRINT "  Weekend!"
+590 END SELECT
+600 END

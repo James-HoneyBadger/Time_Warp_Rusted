@@ -1,44 +1,58 @@
-/*
- * Variables and Data Types
- * 
- * Demonstrates:
- * - Different data types (int, float, char, string)
- * - Variable declaration and initialization
- * - Format specifiers in printf()
- */
+/* ============================================
+ * 02 - Variables and Types
+ * Learn: int, float, double, char, const
+ * ============================================ */
 
 #include <stdio.h>
 
 int main() {
-    // Integer variables
-    int age = 25;
-    int year = 2025;
-    
+    printf("=== Variables & Types ===\n\n");
+
+    // Integer types
+    int age = 15;
+    int count = 100;
+    long big_number = 1000000;
+    printf("int age = %d\n", age);
+    printf("int count = %d\n", count);
+    printf("long big = %d\n", big_number);
+    printf("\n");
+
     // Floating point
-    float price = 19.99;
-    float temperature = 72.5;
-    
-    // Characters and strings
-    char grade = 'A';
-    char name[50] = "Alice";
-    
-    // Display all variables
-    printf("=== Variable Examples ===\n\n");
-    
-    printf("Name: %s\n", name);
-    printf("Age: %d years\n", age);
-    printf("Grade: %c\n", grade);
-    printf("Year: %d\n", year);
-    printf("Price: $%.2f\n", price);
-    printf("Temperature: %.1f°F\n", temperature);
-    
-    // Arithmetic with variables
-    int next_year = year + 1;
-    float total = price * 2;
-    
-    printf("\nCalculations:\n");
-    printf("Next year: %d\n", next_year);
-    printf("Two items: $%.2f\n", total);
-    
+    float pi = 3.14159;
+    double precise = 3.141592653589793;
+    printf("float pi = %f\n", pi);
+    printf("double precise = %f\n", precise);
+    printf("\n");
+
+    // Character
+    char letter = 'A';
+    char digit = '7';
+    printf("char letter = %c (ASCII %d)\n", letter, letter);
+    printf("char digit = %c (ASCII %d)\n", digit, digit);
+    printf("\n");
+
+    // Constants
+    const int MAX_SCORE = 100;
+    printf("const MAX_SCORE = %d\n", MAX_SCORE);
+    printf("\n");
+
+    // Arithmetic
+    int a = 25;
+    int b = 7;
+    printf("=== Arithmetic ===\n");
+    printf("%d + %d = %d\n", a, b, a + b);
+    printf("%d - %d = %d\n", a, b, a - b);
+    printf("%d * %d = %d\n", a, b, a * b);
+    printf("%d / %d = %d\n", a, b, a / b);
+
+    // Compound assignment
+    int x = 10;
+    x += 5;
+    printf("\nx = 10; x += 5; x = %d\n", x);
+    x *= 2;
+    printf("x *= 2; x = %d\n", x);
+    x++;
+    printf("x++; x = %d\n", x);
+
     return 0;
 }

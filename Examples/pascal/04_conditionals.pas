@@ -1,69 +1,66 @@
-{
-  Conditional Statements
-  
-  Demonstrates:
-  - If-Then-Else statements
-  - Case statement (Pascal's switch)
-  - Boolean expressions
-  - Nested conditionals
-}
+{ ============================================ }
+{ 04 - Conditionals                             }
+{ Learn: if/then/else, nested conditions        }
+{ ============================================ }
 
-Program Conditionals;
-Var
-  score: Integer;
-  grade: Char;
+program Conditionals;
+var
+  score, temp, hour: Integer;
+begin
+  writeln('=== Conditionals ===');
+  writeln;
 
-Begin
-  WriteLn('=== Grade Calculator ===');
-  WriteLn;
-  
-  Write('Enter your score (0-100): ');
-  ReadLn(score);
-  
-  { Validate input }
-  If (score < 0) Or (score > 100) Then
-  Begin
-    WriteLn('Error: Score must be between 0 and 100!');
-    Halt(1);
-  End;
-  
-  { Determine letter grade }
-  If score >= 90 Then
-  Begin
-    grade := 'A';
-    WriteLn('Excellent! Grade: ', grade);
-  End
-  Else If score >= 80 Then
-  Begin
-    grade := 'B';
-    WriteLn('Good job! Grade: ', grade);
-  End
-  Else If score >= 70 Then
-  Begin
-    grade := 'C';
-    WriteLn('Average. Grade: ', grade);
-  End
-  Else If score >= 60 Then
-  Begin
-    grade := 'D';
-    WriteLn('Below average. Grade: ', grade);
-  End
-  Else
-  Begin
-    grade := 'F';
-    WriteLn('Failing. Grade: ', grade);
-  End;
-  
-  { Case statement example }
-  WriteLn;
-  Write('Feedback: ');
-  Case grade Of
-    'A': WriteLn('Outstanding work!');
-    'B': WriteLn('Keep it up!');
-    'C': WriteLn('Room for improvement.');
-    'D': WriteLn('Need more study time.');
-    'F': WriteLn('Please see instructor.');
-  Else
-    WriteLn('Unknown grade.');
-  End;
-End.
+  { Simple if/then }
+  score := 85;
+  writeln('Score: ', score);
+  if score >= 90 then
+    writeln('Grade: A - Excellent!')
+  else if score >= 80 then
+    writeln('Grade: B - Great work!')
+  else if score >= 70 then
+    writeln('Grade: C - Good job')
+  else if score >= 60 then
+    writeln('Grade: D - Needs improvement')
+  else
+    writeln('Grade: F - See teacher');
+  writeln;
+
+  { Nested conditions with begin/end }
+  temp := 72;
+  writeln('Temperature: ', temp, ' degrees');
+  if temp > 85 then
+  begin
+    writeln('  It is HOT outside!');
+    writeln('  Stay hydrated!');
+  end
+  else if temp > 60 then
+  begin
+    writeln('  Nice weather!');
+    writeln('  Perfect for a walk.');
+  end
+  else
+  begin
+    writeln('  It is cold!');
+    writeln('  Wear a jacket.');
+  end;
+  writeln;
+
+  { Time-based greeting }
+  hour := 14;
+  writeln('Hour: ', hour, ':00');
+  if hour < 12 then
+    writeln('Good morning!')
+  else if hour < 17 then
+    writeln('Good afternoon!')
+  else
+    writeln('Good evening!');
+  writeln;
+
+  { Boolean expressions }
+  if (score > 80) and (temp > 60) then
+    writeln('Great score AND nice weather!');
+  if (score > 90) or (temp > 90) then
+    writeln('Either excellent score or very hot')
+  else
+    writeln('Neither top score nor extreme heat');
+end.

@@ -1,0 +1,46 @@
+; ============================================
+; 06 - Spirals and Patterns
+; Learn: Growing patterns, nested REPEAT, art
+; ============================================
+
+; Square spiral
+SETPENCOLOR "CYAN
+SETPENWIDTH 2
+MAKE "SIZE 5
+REPEAT 40 [
+    FORWARD :SIZE
+    RIGHT 91
+    MAKE "SIZE :SIZE + 3
+]
+
+; Circular spiral
+PENUP HOME LEFT 90 FORWARD 180 RIGHT 90 PENDOWN
+SETPENCOLOR "MAGENTA
+MAKE "DIST 2
+REPEAT 60 [
+    FORWARD :DIST
+    RIGHT 15
+    MAKE "DIST :DIST + 1
+]
+
+; Starburst pattern
+PENUP HOME RIGHT 90 FORWARD 180 LEFT 90 PENDOWN
+SETPENCOLOR "GOLD
+SETPENWIDTH 1
+REPEAT 36 [
+    FORWARD 80
+    BACKWARD 80
+    RIGHT 10
+]
+
+; Concentric squares
+PENUP HOME BACKWARD 120 LEFT 90 FORWARD 100 RIGHT 90 PENDOWN
+REPEAT 8 [
+    SETPENCOLOR "RED
+    MAKE "S REPCOUNT * 15
+    REPEAT 4 [FORWARD :S RIGHT 90]
+    PENUP BACKWARD 7 LEFT 90 FORWARD 7 RIGHT 90 PENDOWN
+]
+
+HIDETURTLE
+PRINT [Spiral patterns complete!]

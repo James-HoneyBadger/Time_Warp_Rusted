@@ -1,16 +1,24 @@
-REMARK ================================================
-REMARK HELLO WORLD - Basic PILOT Program
-REMARK ================================================
-REMARK
-REMARK This is a simple PILOT program demonstrating
-REMARK basic input/output and program structure.
-REMARK
+R: =============================================
+R: PILOT Example 01 — Hello World
+R: Time Warp Studio
+R: =============================================
+R: Two syntax styles: classic single-letter
+R: commands and verbose keyword commands.
 
-PRINT Welcome to Time Warp Studio PILOT
+R: --- Classic syntax ---
+T: Hello, World!
+T: Welcome to Time Warp PILOT!
+
+R: --- Verbose keyword syntax ---
 PRINT
-ACCEPT USER_NAME What is your name?
-PRINT Hello, $USER_NAME!
-PRINT This is your first PILOT program.
+PRINT =============================
+PRINT   Hello from verbose PILOT!
+PRINT =============================
 PRINT
-PRINT Program complete.
-STOP
+PRINT PILOT stands for Programmed Inquiry,
+PRINT Learning Or Teaching.
+PRINT
+PRINT It was designed for creating
+PRINT interactive lessons and quizzes.
+
+E:

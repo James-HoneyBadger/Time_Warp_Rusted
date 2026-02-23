@@ -1,0 +1,106 @@
+R: =============================================
+R: PILOT Example 08 — Interactive Quiz
+R: Time Warp Studio
+R: =============================================
+R: PILOT was designed for creating educational
+R: quizzes and lessons. This example shows a
+R: complete quiz using Match, conditional
+R: output, scoring, and subroutines.
+
+T: ===================================
+T:  PILOT Interactive Science Quiz
+T: ===================================
+T:
+T: Welcome! Answer each question.
+T: You will get feedback after each one.
+T: Let's see how much you know!
+
+C: SCORE = 0
+C: TOTAL = 5
+
+R: ---- Question 1 ----
+T:
+T: Question 1 of 5
+T: What planet is closest to the Sun?
+A: ANS
+M: MERCURY
+TY: Correct! Mercury is the closest planet.
+C: SCORE = SCORE + 1
+TN: Sorry, the answer is Mercury.
+
+R: ---- Question 2 ----
+T:
+T: Question 2 of 5
+T: What gas do plants absorb from the air?
+T: (a) Oxygen  (b) Carbon Dioxide  (c) Nitrogen
+A: ANS
+M: B,CARBON DIOXIDE,CO2,CARBON*
+TY: Correct! Plants absorb Carbon Dioxide.
+C: SCORE = SCORE + 1
+TN: Not quite. Plants absorb Carbon Dioxide (CO2).
+
+R: ---- Question 3 ----
+T:
+T: Question 3 of 5
+T: How many legs does a spider have?
+A: ANS
+M: 8,EIGHT
+TY: Correct! Spiders have 8 legs.
+C: SCORE = SCORE + 1
+TN: Nope! Spiders have 8 legs, not #ANS.
+
+R: ---- Question 4 ----
+T:
+T: Question 4 of 5
+T: What is the chemical symbol for water?
+A: ANS
+M: H2O
+TY: Correct! H2O is water.
+C: SCORE = SCORE + 1
+TN: The answer is H2O.
+
+R: ---- Question 5 ----
+T:
+T: Question 5 of 5
+T: What is the largest ocean on Earth?
+A: ANS
+M: PACIFIC,PACIFIC OCEAN,*PACIFIC*
+TY: Correct! The Pacific Ocean is the largest.
+C: SCORE = SCORE + 1
+TN: It is the Pacific Ocean.
+
+R: ---- Results ----
+T:
+T: ===================================
+T:         Quiz Results
+T: ===================================
+T: You scored #SCORE out of #TOTAL!
+
+C: PCT = SCORE * 100 / TOTAL
+T: That is #PCT percent.
+T:
+
+R: Use MATCH/CASE for grade feedback
+COMPUTE GRADE $SCORE
+
+MATCH $GRADE
+  CASE 5:
+    PRINT PERFECT SCORE! You are a science star!
+  CASE 4:
+    PRINT Excellent! Almost perfect!
+  CASE 3:
+    PRINT Good job! You know your stuff.
+  CASE 2:
+    PRINT Not bad. Keep studying!
+  CASE [0-1]:
+    PRINT Keep learning! Science is fun!
+  DEFAULT:
+    PRINT Thanks for playing!
+END
+
+T:
+T: ===================================
+T:  Thank you for taking the quiz!
+T: ===================================
+
+E:

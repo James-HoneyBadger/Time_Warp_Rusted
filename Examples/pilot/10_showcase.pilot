@@ -1,0 +1,298 @@
+R: =============================================
+R: PILOT Example 10 — Complete Showcase
+R: Time Warp Studio
+R: =============================================
+R: This showcase demonstrates EVERY feature
+R: of the Time Warp PILOT interpreter:
+R:
+R: CLASSIC SYNTAX:
+R:   R: Remark       T: Type (print)
+R:   A: Accept       M: Match
+R:   C: Compute      J: Jump
+R:   U: Use          D: Display
+R:   E: End          Y: Jump if match
+R:   N: Jump if no match
+R:   TY:/TN: Conditional type
+R:
+R: VERBOSE SYNTAX:
+R:   REMARK  PRINT  ACCEPT  COMPUTE
+R:   MATCH/CASE/DEFAULT/END
+R:   JUMP  TU  RULE  RETURN  STOP
+R:
+R: FEATURES:
+R:   #VAR and $VAR interpolation
+R:   Wildcard pattern matching (*)
+R:   Range matching [low-high]
+R:   Subroutines (TU/RULE/RETURN)
+R:   Labels (*NAME) and jumps
+
+T: ############################################
+T: #                                          #
+T: #    PILOT LANGUAGE COMPLETE SHOWCASE      #
+T: #    Time Warp Studio                      #
+T: #                                          #
+T: ############################################
+
+R: ============================================
+R: SECTION 1: Classic Output Commands
+R: ============================================
+T:
+T: === Section 1: Output (T: and D:) ===
+T: T: is the Type command for output.
+D: D: is the Display command (same as T:).
+T:
+
+R: ============================================
+R: SECTION 2: Variables & Computation
+R: ============================================
+T: === Section 2: Variables ===
+C: X = 7
+C: Y = 13
+C: SUM = X + Y
+C: PRODUCT = X * Y
+C: POWER = X * X
+T: X = #X,  Y = #Y
+T: Sum = #SUM,  Product = #PRODUCT
+T: X squared = #POWER
+
+PRINT
+PRINT === Section 2b: Verbose Compute ===
+COMPUTE PI_APPROX 355 / 113
+COMPUTE RADIUS 10
+COMPUTE CIRCLE_AREA $PI_APPROX * $RADIUS * $RADIUS
+PRINT Pi (approx) = $PI_APPROX
+PRINT Circle area (r=$RADIUS) = $CIRCLE_AREA
+
+R: ============================================
+R: SECTION 3: Input & Interpolation
+R: ============================================
+PRINT
+PRINT === Section 3: Interactive Input ===
+ACCEPT USERNAME Enter your name
+PRINT Welcome, $USERNAME! Let us explore PILOT.
+
+R: ============================================
+R: SECTION 4: Pattern Matching
+R: ============================================
+PRINT
+PRINT === Section 4: Pattern Matching ===
+T: Do you enjoy vintage computing? (yes/no)
+A: ANSWER
+M: YES,Y,YEP,SURE,ABSOLUTELY,YEAH,YA
+TY: Fantastic! You are in the right place!
+TN: Give it time — retro computing is great!
+
+T: Name a programming language:
+A: LANG
+M: *PILOT*
+TY: You chose PILOT — excellent taste!
+M: *BASIC*,*LOGO*,*PASCAL*,*FORTH*
+TY: That is a Time Warp language too!
+M: *C*,*PYTHON*,*JAVA*,*RUST*
+TY: A modern classic!
+
+R: ============================================
+R: SECTION 5: MATCH/CASE/DEFAULT/END Blocks
+R: ============================================
+PRINT
+PRINT === Section 5: MATCH/CASE Blocks ===
+ACCEPT RATING Rate this demo 1 to 5
+
+MATCH $RATING
+  CASE 5:
+    PRINT Five stars! Thank you!
+    PRINT You are very generous.
+  CASE 4:
+    PRINT Four stars - great!
+  CASE 3:
+    PRINT Three stars - good.
+  CASE [1-2]:
+    PRINT We will try harder!
+  DEFAULT:
+    PRINT Please enter 1 through 5.
+END
+
+R: ============================================
+R: SECTION 6: Labels and Jumps
+R: ============================================
+PRINT
+PRINT === Section 6: Labels and Jumps ===
+COMPUTE COUNTER 5
+
+*COUNTDOWN_DEMO
+PRINT Countdown: $COUNTER
+COMPUTE COUNTER $COUNTER - 1
+MATCH $COUNTER
+  CASE 0:
+    PRINT Liftoff!
+    JUMP AFTER_COUNTDOWN_DEMO
+  DEFAULT:
+    JUMP COUNTDOWN_DEMO
+END
+
+*AFTER_COUNTDOWN_DEMO
+
+R: ============================================
+R: SECTION 7: Subroutines (TU / RULE / RETURN)
+R: ============================================
+PRINT
+PRINT === Section 7: Subroutines ===
+TU BANNER
+PRINT Subroutine call complete.
+PRINT
+
+PRINT Calling math subroutine...
+COMPUTE VAL 6
+TU SQUARE_IT
+PRINT $VAL squared = $RESULT
+
+PRINT
+COMPUTE VAL 8
+TU SQUARE_IT
+PRINT $VAL squared = $RESULT
+
+JUMP SECTION8
+
+R: --- Subroutine: BANNER ---
+*BANNER
+RULE BANNER
+PRINT +----------------------------+
+PRINT |  PILOT Subroutine Called!  |
+PRINT +----------------------------+
+RETURN
+
+R: --- Subroutine: SQUARE_IT ---
+*SQUARE_IT
+RULE SQUARE_IT
+COMPUTE RESULT $VAL * $VAL
+RETURN
+
+R: ============================================
+R: SECTION 8: Conditional Suffixes
+R: ============================================
+*SECTION8
+PRINT
+PRINT === Section 8: Conditional Suffixes ===
+T: Is the sky blue? (yes/no)
+A: SKY
+M: YES,Y
+TY: Correct! The sky is blue (on a clear day).
+TN: Actually, it usually is!
+
+R: Conditional jumps
+M: YES,Y
+Y: SKY_YES
+N: SKY_NO
+J: SKY_DONE
+
+*SKY_YES
+T: (Y: branch taken — match was true)
+J: SKY_DONE
+
+*SKY_NO
+T: (N: branch taken — match was false)
+
+*SKY_DONE
+
+R: ============================================
+R: SECTION 9: Arithmetic Showcase
+R: ============================================
+PRINT
+PRINT === Section 9: Arithmetic ===
+COMPUTE A 144
+COMPUTE B 12
+COMPUTE ADD $A + $B
+COMPUTE SUB $A - $B
+COMPUTE MUL $A * $B
+COMPUTE DIV $A / $B
+
+PRINT $A + $B = $ADD
+PRINT $A - $B = $SUB
+PRINT $A * $B = $MUL
+PRINT $A / $B = $DIV
+
+R: Fibonacci-like sequence
+PRINT
+PRINT Fibonacci-style sequence:
+COMPUTE F1 1
+COMPUTE F2 1
+PRINT $F1
+PRINT $F2
+COMPUTE F3 $F1 + $F2
+PRINT $F3
+COMPUTE F4 $F2 + $F3
+PRINT $F4
+COMPUTE F5 $F3 + $F4
+PRINT $F5
+COMPUTE F6 $F4 + $F5
+PRINT $F6
+COMPUTE F7 $F5 + $F6
+PRINT $F7
+COMPUTE F8 $F6 + $F7
+PRINT $F8
+
+R: ============================================
+R: SECTION 10: Complete Mini-Application
+R: ============================================
+PRINT
+PRINT === Section 10: Interactive Calculator ===
+PRINT Enter two numbers and an operator.
+PRINT
+
+ACCEPT NUM1 First number
+ACCEPT NUM2 Second number
+ACCEPT OP Operator (+, -, *, /)
+
+MATCH $OP
+  CASE +:
+    COMPUTE ANSWER $NUM1 + $NUM2
+    PRINT $NUM1 + $NUM2 = $ANSWER
+  CASE -:
+    COMPUTE ANSWER $NUM1 - $NUM2
+    PRINT $NUM1 - $NUM2 = $ANSWER
+  CASE *:
+    COMPUTE ANSWER $NUM1 * $NUM2
+    PRINT $NUM1 * $NUM2 = $ANSWER
+  CASE /:
+    COMPUTE ANSWER $NUM1 / $NUM2
+    PRINT $NUM1 / $NUM2 = $ANSWER
+  DEFAULT:
+    PRINT Unknown operator: $OP
+END
+
+R: ============================================
+R: FINALE
+R: ============================================
+PRINT
+TU FINAL_BANNER
+JUMP THE_END
+
+*FINAL_BANNER
+RULE FINAL_BANNER
+PRINT ############################################
+PRINT #                                          #
+PRINT #  PILOT SHOWCASE COMPLETE!                #
+PRINT #                                          #
+PRINT #  Features demonstrated:                  #
+PRINT #    R: Remark (comments)                  #
+PRINT #    T: Type / D: Display                  #
+PRINT #    A: Accept (input)                     #
+PRINT #    M: Match (pattern matching)           #
+PRINT #    C: Compute (variables)                #
+PRINT #    J: Jump / Y: / N:                     #
+PRINT #    TY: / TN: conditional output          #
+PRINT #    *LABEL definitions                    #
+PRINT #    PRINT / ACCEPT / COMPUTE (verbose)    #
+PRINT #    MATCH / CASE / DEFAULT / END          #
+PRINT #    TU / RULE / RETURN (subroutines)      #
+PRINT #    #VAR and $VAR interpolation           #
+PRINT #    Wildcard matching (*)                 #
+PRINT #    Range matching [low-high]             #
+PRINT #                                          #
+PRINT #  Thank you for exploring PILOT!          #
+PRINT #                                          #
+PRINT ############################################
+RETURN
+
+*THE_END
+E:

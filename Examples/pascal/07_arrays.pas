@@ -1,93 +1,77 @@
-{
-  Arrays - Working with Collections
-  
-  Demonstrates:
-  - Array declarations
-  - Accessing array elements
-  - Iterating through arrays
-  - Multi-dimensional arrays
-}
+{ ============================================ }
+{ 07 - Arrays and Algorithms                    }
+{ Learn: arrays, sorting, searching             }
+{ ============================================ }
 
-Program Arrays;
-Var
-  numbers: Array[1..5] Of Integer;
-  scores: Array[1..10] Of Integer;
-  table: Array[1..5, 1..5] Of Integer;
-  i, j, sum, max: Integer;
-  average: Real;
+program ArraysAndAlgorithms;
+var
+  data: array[1..10] of Integer;
+  sorted: array[1..10] of Integer;
+  i, j, temp, sum, min_val, max_val: Integer;
+begin
+  writeln('=== Arrays & Algorithms ===');
+  writeln;
 
-Begin
-  { ARRAY BASICS }
-  WriteLn('=== Array Basics ===');
-  numbers[1] := 10;
-  numbers[2] := 20;
-  numbers[3] := 30;
-  numbers[4] := 40;
-  numbers[5] := 50;
-  
-  WriteLn('Array elements:');
-  For i := 1 To 5 Do
-    WriteLn('numbers[', i, '] = ', numbers[i]);
-  WriteLn;
-  
-  { ARRAY OPERATIONS }
-  WriteLn('=== Array Operations ===');
-  
-  { Sum }
+  { Initialize array }
+  data[1] := 64;  data[2] := 34;  data[3] := 25;
+  data[4] := 12;  data[5] := 22;  data[6] := 11;
+  data[7] := 90;  data[8] := 45;  data[9] := 78;
+  data[10] := 56;
+
+  { Display original }
+  writeln('Original array:');
+  write('  ');
+  for i := 1 to 10 do
+    write(data[i], ' ');
+  writeln;
+  writeln;
+
+  { Statistics }
   sum := 0;
-  For i := 1 To 5 Do
-    sum := sum + numbers[i];
-  WriteLn('Sum: ', sum);
-  
-  { Average }
-  average := sum / 5.0;
-  WriteLn('Average: ', average:0:1);
-  
-  { Find maximum }
-  max := numbers[1];
-  For i := 2 To 5 Do
-    If numbers[i] > max Then
-      max := numbers[i];
-  WriteLn('Maximum: ', max);
-  WriteLn;
-  
-  { STORING SCORES }
-  WriteLn('=== Student Scores ===');
-  WriteLn('Enter 10 test scores:');
-  For i := 1 To 10 Do
-  Begin
-    Write('Score ', i, ': ');
-    ReadLn(scores[i]);
-  End;
-  
-  { Calculate average }
-  sum := 0;
-  For i := 1 To 10 Do
-    sum := sum + scores[i];
-  WriteLn;
-  WriteLn('Class average: ', (sum / 10.0):0:1);
-  WriteLn;
-  
-  { 2D ARRAY - Multiplication Table }
-  WriteLn('=== 2D Array: Multiplication Table ===');
-  
-  { Fill table }
-  For i := 1 To 5 Do
-    For j := 1 To 5 Do
-      table[i, j] := i * j;
-  
-  { Print table }
-  Write('     ');
-  For j := 1 To 5 Do
-    Write(j:3, ' ');
-  WriteLn;
-  WriteLn('   -------------------');
-  
-  For i := 1 To 5 Do
-  Begin
-    Write(i, ' | ');
-    For j := 1 To 5 Do
-      Write(table[i, j]:3, ' ');
-    WriteLn;
-  End;
-End.
+  min_val := data[1];
+  max_val := data[1];
+  for i := 1 to 10 do
+  begin
+    sum := sum + data[i];
+    if data[i] < min_val then
+      min_val := data[i];
+    if data[i] > max_val then
+      max_val := data[i];
+  end;
+  writeln('Statistics:');
+  writeln('  Sum:     ', sum);
+  writeln('  Average: ', sum / 10);
+  writeln('  Minimum: ', min_val);
+  writeln('  Maximum: ', max_val);
+  writeln;
+
+  { Copy to sorted array }
+  for i := 1 to 10 do
+    sorted[i] := data[i];
+
+  { Bubble sort }
+  for i := 1 to 9 do
+    for j := 1 to 10 - i do
+      if sorted[j] > sorted[j + 1] then
+      begin
+        temp := sorted[j];
+        sorted[j] := sorted[j + 1];
+        sorted[j + 1] := temp;
+      end;
+
+  writeln('Sorted array:');
+  write('  ');
+  for i := 1 to 10 do
+    write(sorted[i], ' ');
+  writeln;
+  writeln;
+
+  { Linear search }
+  writeln('Searching for 45...');
+  for i := 1 to 10 do
+    if data[i] = 45 then
+      writeln('  Found at position ', i);
+
+  writeln;
+  writeln('Done!');
+end.

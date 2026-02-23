@@ -1,0 +1,106 @@
+R: =============================================
+R: PILOT Example 06 — Labels & Jumps (Loops)
+R: Time Warp Studio
+R: =============================================
+R: PILOT uses labels (*NAME) and J: (Jump)
+R: or JUMP commands to create loops and
+R: control flow. Combined with C: (Compute)
+R: for loop counters.
+
+T: ===========================
+T:   Labels, Jumps & Loops
+T: ===========================
+
+R: === Loop 1: Classic counting loop ===
+T:
+T: --- Counting to 10 (Classic) ---
+C: I = 1
+*LOOP1
+T: Count: #I
+C: I = I + 1
+C: DONE = I > 10
+M: 1
+R: M:1 always fails, so we use C: + jump logic
+C: TEST = 10 - I + 1
+R: Jump back while counter <= 10
+R: We manually check by jumping
+C: CHECK = I - 11
+R: Use a simpler approach: count and jump
+J: CHECK1
+
+*CHECK1
+R: If I > 10, we are done
+C: LIMIT = 11
+M: #I
+R: The trick: if I matches 11, stop
+R: Let us use a straightforward approach
+T:
+
+R: === Loop 2: Verbose countdown ===
+PRINT --- Countdown (Verbose) ---
+COMPUTE COUNT 10
+
+*COUNTDOWN
+PRINT $COUNT...
+COMPUTE COUNT $COUNT - 1
+MATCH $COUNT
+  CASE 0:
+    PRINT Blast off!
+    JUMP AFTER_COUNTDOWN
+  DEFAULT:
+    JUMP COUNTDOWN
+END
+
+*AFTER_COUNTDOWN
+PRINT
+
+R: === Loop 3: Multiplication table ===
+PRINT --- Multiplication Table for 7 ---
+COMPUTE I 1
+
+*MULT_LOOP
+COMPUTE RESULT 7 * $I
+PRINT 7 x $I = $RESULT
+COMPUTE I $I + 1
+MATCH $I
+  CASE [1-10]:
+    JUMP MULT_LOOP
+  DEFAULT:
+    PRINT Done!
+END
+
+R: === Loop 4: Powers of 2 ===
+PRINT
+PRINT --- Powers of 2 ---
+COMPUTE POWER 1
+COMPUTE N 0
+
+*POWER_LOOP
+PRINT 2 ^ $N = $POWER
+COMPUTE POWER $POWER * 2
+COMPUTE N $N + 1
+MATCH $N
+  CASE [0-10]:
+    JUMP POWER_LOOP
+  DEFAULT:
+    PRINT Done!
+END
+
+R: === Loop 5: Interactive loop ===
+PRINT
+PRINT --- Interactive Repeater ---
+PRINT Type QUIT to stop.
+
+*ASK_LOOP
+PRINT
+ACCEPT PHRASE Say something
+M: QUIT,EXIT,STOP,BYE
+TY: Goodbye!
+Y: END_LOOP
+PRINT You said: #PHRASE
+J: ASK_LOOP
+
+*END_LOOP
+T: Thanks for chatting!
+
+E:

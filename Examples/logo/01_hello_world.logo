@@ -1,17 +1,21 @@
-                                                                                                                                                                                                                                                                                                           ; ========================================
-; HELLO WORLD - Logo First Program
-; ========================================
-; Demonstrates: PRINT command and procedures
-; 
+; ============================================
+; 01 - Hello World & First Steps
+; Learn: PRINT, FORWARD, RIGHT, basic drawing
+; ============================================
 
-TO GREET
-    PRINT [Hello, LOGO!]
-    PRINT [Welcome to Time Warp Studio]
-END
+PRINT [Welcome to Logo!]
+PRINT [Logo is the language of the turtle.]
+PRINT []
 
-; Call the procedure
-GREET
+; Draw a simple square
+PRINT [Drawing a square...]
+FORWARD 100
+RIGHT 90
+FORWARD 100
+RIGHT 90
+FORWARD 100
+RIGHT 90
+FORWARD 100
+RIGHT 90
 
-; More output
-PRINT [Graphics is ready to draw!]
-                                                                                                                                             
+PRINT [Square complete!]

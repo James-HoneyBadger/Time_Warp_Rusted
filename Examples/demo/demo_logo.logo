@@ -1,64 +1,235 @@
-PRINT "Time Warp Studio - Logo Demo"
-PRINT
-REM Draw square
-FORWARD 100
-RIGHT 90
-FORWARD 100
-RIGHT 90
-FORWARD 100
-RIGHT 90
-FORWARD 100
-REM Square complete
-REM Draw nested squares
-PENUP
-FORWARD 50
-RIGHT 45
-PENDOWN
-FORWARD 80
-RIGHT 90
-FORWARD 80
-RIGHT 90
-FORWARD 80
-RIGHT 90
-FORWARD 80
-REM Create star
-PENUP
-HOME
-RIGHT 45
-PENDOWN
-FORWARD 150
-RIGHT 144
-FORWARD 150
-RIGHT 144
-FORWARD 150
-RIGHT 144
-FORWARD 150
-RIGHT 144
-FORWARD 150
-REM Circle approximation
-PENUP
-HOME
-PENDOWN
-FORWARD 10
-RIGHT 10
-FORWARD 10
-RIGHT 10
-FORWARD 10
-RIGHT 10
-FORWARD 10
-RIGHT 10
-FORWARD 10
-REM Draw another shape
-PENUP
-HOME
-RIGHT 45
-PENDOWN
-FORWARD 120
-RIGHT 90
-FORWARD 80
-RIGHT 90
-FORWARD 120
-REM Demo complete
-PENUP
-HOME
-PRINT "Logo Demo Complete!"
+; =============================================
+; Time Warp Logo — Grand Demo
+; A spectacular turtle graphics showcase
+; =============================================
+
+PRINT [============================================]
+PRINT [     TIME WARP LOGO - GRAND DEMO]
+PRINT [============================================]
+PRINT []
+
+; === Procedure Definitions ===
+
+TO POLYGON :SIDES :SIZE
+  REPEAT :SIDES [FD :SIZE RT 360 / :SIDES]
+END
+
+TO STAR :SIZE
+  REPEAT 5 [FD :SIZE RT 144]
+END
+
+TO SPIRAL :SIZE :ANGLE :STEP :COUNT
+  IF :COUNT = 0 [STOP]
+  FD :SIZE
+  RT :ANGLE
+  SPIRAL :SIZE + :STEP :ANGLE :STEP :COUNT - 1
+END
+
+TO TREE :SIZE
+  IF :SIZE < 5 [STOP]
+  FD :SIZE
+  LT 30
+  TREE :SIZE * 0.7
+  RT 60
+  TREE :SIZE * 0.7
+  LT 30
+  BK :SIZE
+END
+
+TO FLOWER_PETAL :SIZE
+  REPEAT 2 [
+    ARC 60 :SIZE
+    RT 120
+  ]
+END
+
+TO SUNFLOWER :PETALS :SIZE
+  REPEAT :PETALS [
+    FLOWER_PETAL :SIZE
+    RT 360 / :PETALS
+  ]
+END
+
+TO KOCH :SIZE :DEPTH
+  IF :DEPTH = 0 [FD :SIZE STOP]
+  KOCH :SIZE / 3 :DEPTH - 1
+  LT 60
+  KOCH :SIZE / 3 :DEPTH - 1
+  RT 120
+  KOCH :SIZE / 3 :DEPTH - 1
+  LT 60
+  KOCH :SIZE / 3 :DEPTH - 1
+END
+
+TO SNOWFLAKE :SIZE :DEPTH
+  REPEAT 3 [
+    KOCH :SIZE :DEPTH
+    RT 120
+  ]
+END
+
+TO FILLED_STAR :SIZE :COLOUR
+  SETPENCOLOR :COLOUR
+  BEGINFILL
+  STAR :SIZE
+  ENDFILL
+END
+
+; =============================================
+; SECTION 1: Rainbow Polygon Gallery
+; =============================================
+PRINT [>>> Section 1: Rainbow Polygon Gallery <<<]
+
+CS
+PU SETXY -150 100 PD
+SETPENCOLOR "red"
+PW 3
+POLYGON 3 50
+
+PU SETXY -50 100 PD
+SETPENCOLOR "orange"
+POLYGON 4 40
+
+PU SETXY 50 100 PD
+SETPENCOLOR "yellow"
+POLYGON 5 35
+
+PU SETXY 150 100 PD
+SETPENCOLOR "green"
+POLYGON 6 30
+
+PU SETXY -100 0 PD
+SETPENCOLOR "blue"
+POLYGON 8 25
+
+PU SETXY 0 0 PD
+SETPENCOLOR "purple"
+POLYGON 10 20
+
+PU SETXY 100 0 PD
+SETPENCOLOR "magenta"
+POLYGON 12 18
+
+; =============================================
+; SECTION 2: Spirograph Art
+; =============================================
+PRINT [>>> Section 2: Spirograph Art <<<]
+
+PU HOME PD
+CS
+PW 2
+
+SETPENCOLOR "cyan"
+SPIRAL 2 91 1 120
+
+PU HOME PD
+SETPENCOLOR "magenta"
+SPIRAL 1 89 0.5 150
+
+; =============================================
+; SECTION 3: Recursive Tree
+; =============================================
+PRINT [>>> Section 3: Recursive Tree <<<]
+
+PU SETXY 0 -120 PD
+CS
+SETPENCOLOR "forestgreen"
+PW 2
+TREE 60
+
+; =============================================
+; SECTION 4: Koch Snowflake
+; =============================================
+PRINT [>>> Section 4: Koch Snowflake <<<]
+
+CS
+PU SETXY -80 50 PD
+SETPENCOLOR "deepskyblue"
+PW 2
+SNOWFLAKE 160 3
+
+; =============================================
+; SECTION 5: Filled Art
+; =============================================
+PRINT [>>> Section 5: Filled Art <<<]
+
+CS
+PU SETXY -80 0 PD
+FILLED_STAR 60 "gold"
+
+PU SETXY 80 0 PD
+FILLED_STAR 60 "crimson"
+
+; Filled hexagon
+PU SETXY 0 80 PD
+SETPENCOLOR "royalblue"
+BEGINFILL
+POLYGON 6 40
+ENDFILL
+
+; =============================================
+; SECTION 6: Dot & Label Art
+; =============================================
+PRINT [>>> Section 6: Dot and Label Art <<<]
+
+CS
+; Dot pattern
+PU SETXY -100 -60 PD
+MAKE "COLORS [red orange yellow green blue purple]
+
+REPEAT 6 [
+  SETPENCOLOR ITEM REPCOUNT :COLORS
+  DOT 15
+  PU FD 40 PD
+]
+
+; Labels
+PU SETXY -80 -100 PD
+SETPENCOLOR "white"
+LABEL [Time Warp Logo Demo]
+
+; =============================================
+; SECTION 7: Grand Finale — Mandala
+; =============================================
+PRINT [>>> Section 7: Grand Finale - Mandala <<<]
+
+CS
+PU HOME PD
+PW 2
+
+REPEAT 36 [
+  SETPENCOLOR ITEM (REPCOUNT % 6) + 1 :COLORS
+  POLYGON 4 50
+  RT 10
+]
+
+PU HOME PD
+REPEAT 36 [
+  SETPENCOLOR ITEM (REPCOUNT % 6) + 1 :COLORS
+  POLYGON 3 30
+  RT 10
+]
+
+; Centre dot
+PU HOME PD
+SETPENCOLOR "gold"
+DOT 10
+
+PRINT []
+PRINT [============================================]
+PRINT [    TIME WARP LOGO DEMO COMPLETE!]
+PRINT [============================================]
+PRINT [  Features shown:]
+PRINT [    - Procedures with parameters (TO/END)]
+PRINT [    - Recursion (TREE, KOCH)]
+PRINT [    - REPEAT loops with REPCOUNT]
+PRINT [    - Variables (MAKE/:VAR)]
+PRINT [    - FORWARD, BACK, RIGHT, LEFT]
+PRINT [    - PENUP, PENDOWN, SETPENCOLOR]
+PRINT [    - PW (pen width)]
+PRINT [    - SETXY, HOME, CS]
+PRINT [    - ARC, DOT, LABEL]
+PRINT [    - BEGINFILL / ENDFILL]
+PRINT [    - IF / STOP conditionals]
+PRINT [    - Lists and ITEM]
+PRINT [============================================]

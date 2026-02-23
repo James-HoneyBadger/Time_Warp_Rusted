@@ -1,0 +1,102 @@
+R: =============================================
+R: PILOT Example 07 — Subroutines
+R: Time Warp Studio
+R: =============================================
+R: Classic: U: label / E: return
+R: Verbose: TU name (Transfer to Use)
+R:          RULE name (marks subroutine)
+R:          RETURN (go back to caller)
+
+T: ===========================
+T:   Subroutines in PILOT
+T: ===========================
+
+R: === Verbose Subroutines with TU / RULE / RETURN ===
+PRINT
+PRINT --- Subroutine Calls ---
+PRINT Calling greeting subroutine...
+TU GREET
+PRINT Back from greeting.
+PRINT
+PRINT Calling farewell subroutine...
+TU FAREWELL
+PRINT Back from farewell.
+
+PRINT
+PRINT --- Calculation Subroutines ---
+COMPUTE NUM 42
+PRINT Original number: $NUM
+TU DOUBLE_IT
+PRINT After doubling: $NUM
+TU DOUBLE_IT
+PRINT After doubling again: $NUM
+
+PRINT
+PRINT --- Box Drawing ---
+COMPUTE WIDTH 30
+TU DRAW_LINE
+PRINT   Time Warp PILOT Subroutines
+TU DRAW_LINE
+
+PRINT
+PRINT --- Multiple Subroutine Calls ---
+TU HEADER
+TU BODY
+TU FOOTER
+
+JUMP PROGRAM_END
+
+R: ---- Subroutine definitions below ----
+
+*GREET
+RULE GREET
+PRINT +-----------------------+
+PRINT |   Hello and Welcome!  |
+PRINT +-----------------------+
+RETURN
+
+*FAREWELL
+RULE FAREWELL
+PRINT +-----------------------+
+PRINT |   Goodbye for now!    |
+PRINT +-----------------------+
+RETURN
+
+*DOUBLE_IT
+RULE DOUBLE_IT
+COMPUTE NUM $NUM * 2
+RETURN
+
+*DRAW_LINE
+RULE DRAW_LINE
+PRINT ==============================
+RETURN
+
+*HEADER
+RULE HEADER
+PRINT ################################
+PRINT #     SUBROUTINE SHOWCASE     #
+PRINT ################################
+RETURN
+
+*BODY
+RULE BODY
+PRINT #                              #
+PRINT #  This demonstrates how       #
+PRINT #  PILOT subroutines work.     #
+PRINT #  TU calls. RETURN returns.   #
+PRINT #                              #
+RETURN
+
+*FOOTER
+RULE FOOTER
+PRINT ################################
+PRINT #        END OF DEMO           #
+PRINT ################################
+RETURN
+
+*PROGRAM_END
+PRINT
+PRINT All subroutines executed successfully!
+
+E:
