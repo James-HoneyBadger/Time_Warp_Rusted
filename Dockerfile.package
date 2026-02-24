@@ -1,0 +1,15 @@
+FROM alpine:3.20
+
+LABEL org.opencontainers.image.title="Time Warp Rusted"
+LABEL org.opencontainers.image.description="Educational multi-language programming environment (package image)"
+LABEL org.opencontainers.image.licenses="MIT"
+LABEL org.opencontainers.image.source="https://github.com/James-HoneyBadger/Time_Warp_Rusted"
+
+WORKDIR /app
+
+COPY README.md LICENSE /app/
+COPY docs /app/docs
+COPY Examples /app/Examples
+COPY tutorials /app/tutorials
+
+CMD ["/bin/sh"]
