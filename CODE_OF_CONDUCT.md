@@ -1,5 +1,7 @@
 # Code of Conduct
 
+*Last Updated: February 2026 (v1.0.0 Release)*
+
 ## Our Commitment
 
 We are committed to providing a welcoming and inspiring community for all. Time Warp Studio is dedicated to fostering an open, friendly, and collaborative environment that embraces diversity and inclusivity.

@@ -6,7 +6,7 @@ Time Warp Studio is a retro-inspired IDE that lets you write, run, and debug
 programs in seven classic programming languages — all with built-in turtle
 graphics, a step-through debugger, and Raspberry Pi GPIO support.
 
-![Version](https://img.shields.io/badge/version-7.0.0-blue)
+![Version](https://img.shields.io/badge/version-1.0.0-blue)
 ![Rust](https://img.shields.io/badge/rust-1.80%2B-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Languages](https://img.shields.io/badge/languages-7-purple)

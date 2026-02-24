@@ -10,7 +10,8 @@ The language executors (BASIC, PILOT, Logo, C, Pascal, Prolog, Forth) are **inte
 
 | Version | Supported |
 |---------|-----------|
-| 7.x (Rust edition) | Yes |
+| 1.x (Rust edition) | Yes |
+| 7.x (Rust edition - legacy) | Maintenance only |
 | 6.x and earlier (Python edition) | End-of-life |
 
 ## Reporting a Vulnerability
