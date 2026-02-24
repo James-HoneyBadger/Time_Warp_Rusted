@@ -1,5 +1,7 @@
 # Contributing to Time Warp Studio
 
+*Release: v1.0.0 (February 2026)*
+
 Thank you for your interest in contributing! This guide covers everything
 you need to get started.
 

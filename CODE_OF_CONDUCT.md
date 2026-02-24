@@ -13,6 +13,8 @@ This Code of Conduct outlines expectations for participation in our community an
 - In-person and virtual events
 - Any other communication channels we establish
 
+*This is your space. Help us keep it welcoming and respectful for everyone.*
+
 ## Our Standards
 
 Examples of behavior that contributes to creating a positive environment include:
