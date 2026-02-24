@@ -1,6 +1,6 @@
 % =============================================
 % Prolog Example 02 — Facts & Queries
-% Time Warp Studio
+% Time Warp Rusted
 % =============================================
 % Facts describe relationships between things.
 % Queries with variables (uppercase) find

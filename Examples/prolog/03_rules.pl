@@ -1,6 +1,6 @@
 % =============================================
 % Prolog Example 03 — Rules
-% Time Warp Studio
+% Time Warp Rusted
 % =============================================
 % Rules define new relationships based on
 % existing facts. Format: head :- body.

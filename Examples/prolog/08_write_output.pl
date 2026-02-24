@@ -1,6 +1,6 @@
 % =============================================
 % Prolog Example 08 — Write & Output
-% Time Warp Studio
+% Time Warp Rusted
 % =============================================
 % The write() predicate outputs a value.
 % Useful for displaying results and messages.

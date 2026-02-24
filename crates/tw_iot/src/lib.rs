@@ -1,4 +1,4 @@
-//! IoT / Raspberry Pi GPIO abstraction layer for Time Warp Studio.
+//! IoT / Raspberry Pi GPIO abstraction layer for Time Warp Rusted.
 //!
 //! Provides a cross-platform GPIO interface that:
 //! - Uses `rppal` for real GPIO on Raspberry Pi (behind `gpio` feature)

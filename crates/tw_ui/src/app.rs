@@ -130,7 +130,7 @@ impl TimeWarpApp {
             .map(|n| n.to_string_lossy().into_owned())
             .unwrap_or_else(|| "Untitled".to_string());
         let dirty = if self.unsaved { " •" } else { "" };
-        format!("⏱ Time Warp Studio — {}{}", file, dirty)
+        format!("⏱ Time Warp Rusted — {}{}", file, dirty)
     }
 
     // ── keyboard shortcuts ────────────────────────────────────────────────

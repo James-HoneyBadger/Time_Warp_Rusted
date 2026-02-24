@@ -1,6 +1,6 @@
 R: =============================================
 R: PILOT Example 04 — Pattern Matching
-R: Time Warp Studio
+R: Time Warp Rusted
 R: =============================================
 R: M: (Match) compares the last A: input
 R: against a comma-separated list of patterns.

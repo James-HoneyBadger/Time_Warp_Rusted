@@ -1,6 +1,6 @@
 % =============================================
 % Prolog Example 06 — Backtracking
-% Time Warp Studio
+% Time Warp Rusted
 % =============================================
 % Prolog automatically backtracks to find
 % ALL possible solutions. When one path fails,

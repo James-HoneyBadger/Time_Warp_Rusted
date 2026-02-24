@@ -1,6 +1,6 @@
 # Turtle Graphics Guide
 
-Time Warp Studio includes a full turtle graphics engine, accessible from
+Time Warp Rusted includes a full turtle graphics engine, accessible from
 BASIC, Logo, and Forth. The turtle draws on the **Canvas** tab — a zoomable,
 pannable drawing surface.
 

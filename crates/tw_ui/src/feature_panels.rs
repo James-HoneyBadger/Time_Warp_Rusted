@@ -124,7 +124,7 @@ impl FeaturePanels {
 
     fn show_about(&mut self, ui: &mut Ui) {
         ScrollArea::vertical().id_salt("about").show(ui, |ui| {
-            ui.heading("⏱ Time Warp Studio");
+            ui.heading("⏱ Time Warp Rusted");
             ui.label("Version 2.0 — Rust Edition");
             ui.separator();
             ui.label("An educational multi-language IDE supporting:");

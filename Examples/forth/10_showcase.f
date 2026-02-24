@@ -4,7 +4,7 @@
 \ ============================================================
 
 ." ========================================" CR
-."     Time Warp Studio - Forth Showcase" CR
+."     Time Warp Rusted - Forth Showcase" CR
 ." ========================================" CR CR
 
 \ --- Stack Operations ---

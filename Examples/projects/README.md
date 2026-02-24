@@ -1,7 +1,7 @@
 # Raspberry Pi Hardware Projects
 
 Real-world GPIO projects for three Raspberry Pi boards, written in
-BASIC and Logo using Time Warp Studio's IoT commands.
+BASIC and Logo using Time Warp Rusted's IoT commands.
 
 ## Boards
 
@@ -100,7 +100,7 @@ data logging, and network-based control for projects 06 and 08.
 
 ## Getting Started
 
-1. Open Time Warp Studio
+1. Open Time Warp Rusted
 2. Open the **IoT Panel** (View → IoT Panel)
 3. Select your board from the board selector
 4. Load a project file

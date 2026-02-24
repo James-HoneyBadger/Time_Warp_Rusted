@@ -2,7 +2,7 @@
 
 use serde::{Deserialize, Serialize};
 
-/// All languages supported by Time Warp Studio.
+/// All languages supported by Time Warp Rusted.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Language {
     Basic,

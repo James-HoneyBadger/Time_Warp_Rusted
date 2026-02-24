@@ -1,6 +1,6 @@
 % =============================================
 % Prolog Example 10 — Complete Showcase
-% Time Warp Studio
+% Time Warp Rusted
 % =============================================
 % This showcase demonstrates every feature of
 % the Time Warp Prolog interpreter:

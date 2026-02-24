@@ -1,6 +1,6 @@
 # User Guide
 
-A complete walkthrough of the Time Warp Studio interface and workflow.
+A complete walkthrough of the Time Warp Rusted interface and workflow.
 
 ---
 
@@ -29,7 +29,7 @@ cargo run            # debug build
 cargo build --release && ./target/release/time-warp-studio
 ```
 
-The window opens at 1400 × 900 pixels with the title **⏱ Time Warp Studio**.
+The window opens at 1400 × 900 pixels with the title **⏱ Time Warp Rusted**.
 
 ---
 
@@ -137,7 +137,7 @@ Font: [−] 14pt [+] [Monospace ▼]  |  ☑ Lines  ☑ Wrap  ☑ Indent  Tab: [
 
 ## Tabs
 
-Time Warp Studio uses a tabbed interface with three main content areas.
+Time Warp Rusted uses a tabbed interface with three main content areas.
 
 ### 📝 Code Editor (Ctrl+1)
 

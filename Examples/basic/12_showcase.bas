@@ -4,7 +4,7 @@ REM  Demonstrates EVERY BASIC feature in one program
 REM ============================================
 
 PRINT "======================================="
-PRINT "  Time Warp Studio - BASIC Showcase"
+PRINT "  Time Warp Rusted - BASIC Showcase"
 PRINT "======================================="
 PRINT
 

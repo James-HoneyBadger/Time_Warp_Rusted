@@ -25,7 +25,7 @@ int main() {
     printf("  Sci:       %e\n", pi);
     printf("  Compact:   %g\n", pi);
     printf("  Character: %c\n", grade);
-    printf("  String:    %s\n", "Time Warp Studio");
+    printf("  String:    %s\n", "Time Warp Rusted");
     printf("  Hex:       0x%x\n", 255);
     printf("  Percent:   100%%\n");
     printf("  Padded:    [%10d]\n", age);

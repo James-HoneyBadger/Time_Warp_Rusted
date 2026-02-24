@@ -7,7 +7,7 @@
 
 int main() {
     printf("================================\n");
-    printf("  Welcome to Time Warp Studio!\n");
+    printf("  Welcome to Time Warp Rusted!\n");
     printf("================================\n");
     printf("\n");
     printf("Hello, World!\n");

@@ -1,6 +1,6 @@
 # Debugging Guide
 
-How to debug programs and troubleshoot issues in Time Warp Studio.
+How to debug programs and troubleshoot issues in Time Warp Rusted.
 
 ---
 

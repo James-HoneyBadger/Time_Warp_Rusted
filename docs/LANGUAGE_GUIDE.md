@@ -20,7 +20,7 @@ Studio.
 
 ## BASIC
 
-Time Warp Studio implements a **Turbo BASIC** dialect with modern
+Time Warp Rusted implements a **Turbo BASIC** dialect with modern
 extensions. Programs can use line numbers (optional) or structured code.
 
 ### Output

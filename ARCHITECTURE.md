@@ -1,6 +1,6 @@
 # Architecture
 
-Technical overview of the Time Warp Studio codebase.
+Technical overview of the Time Warp Rusted codebase.
 
 ---
 

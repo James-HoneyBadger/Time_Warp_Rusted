@@ -6,9 +6,9 @@ Answers to common questions and solutions to typical problems.
 
 ## General
 
-### What is Time Warp Studio?
+### What is Time Warp Rusted?
 
-Time Warp Studio is a retro-inspired programming IDE written in Rust. It
+Time Warp Rusted is a retro-inspired programming IDE written in Rust. It
 supports seven classic languages — BASIC, Logo, C, Pascal, Forth, PILOT,
 and Prolog — with a built-in editor, turtle graphics canvas, 20 visual
 themes, and Raspberry Pi GPIO simulation.
@@ -20,7 +20,7 @@ platform-specific build instructions.
 
 ### Is it an emulator?
 
-No. Time Warp Studio is a native desktop application with custom
+No. Time Warp Rusted is a native desktop application with custom
 interpreters for each language. It recreates the *feel* of classic
 programming environments but is not emulating historical hardware or
 software.

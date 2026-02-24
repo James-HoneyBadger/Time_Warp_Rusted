@@ -1,8 +1,8 @@
-# Tutorial 01 — Getting Started with Time Warp Studio
+# Tutorial 01 — Getting Started with Time Warp Rusted
 
-## What is Time Warp Studio?
+## What is Time Warp Rusted?
 
-Time Warp Studio is a retro programming environment that lets you write and
+Time Warp Rusted is a retro programming environment that lets you write and
 run programs in **seven classic programming languages**:
 
 | Language | Year | What It's Great For |
@@ -19,7 +19,7 @@ run programs in **seven classic programming languages**:
 
 ## Your First Program
 
-### Step 1: Open Time Warp Studio
+### Step 1: Open Time Warp Rusted
 
 Launch the application. You will see:
 - A **code editor** on the left where you type programs
@@ -38,7 +38,7 @@ In the editor, type:
 ```basic
 PRINT "Hello, World!"
 PRINT "I am learning to code!"
-PRINT "This is Time Warp Studio!"
+PRINT "This is Time Warp Rusted!"
 ```
 
 ### Step 4: Run It
@@ -48,7 +48,7 @@ Click **Run** (or press the keyboard shortcut). You should see:
 ```
 Hello, World!
 I am learning to code!
-This is Time Warp Studio!
+This is Time Warp Rusted!
 ```
 
 🎉 **Congratulations!** You just wrote your first program!

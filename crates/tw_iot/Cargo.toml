@@ -2,7 +2,7 @@
 name = "tw_iot"
 version = "1.0.0"
 edition = "2021"
-description = "IoT / Raspberry Pi GPIO abstraction for Time Warp Studio"
+description = "IoT / Raspberry Pi GPIO abstraction for Time Warp Rusted"
 license = "MIT"
 
 [dependencies]

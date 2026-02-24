@@ -1,6 +1,6 @@
 % =============================================
 % Prolog Example 07 — Knowledge Base
-% Time Warp Studio
+% Time Warp Rusted
 % =============================================
 % Prolog excels at representing knowledge.
 % This example builds a small expert system

@@ -1,6 +1,6 @@
 % =============================================
 % Prolog Example 09 — Complex Rules & Chains
-% Time Warp Studio
+% Time Warp Rusted
 % =============================================
 % Demonstrates multi-goal rules, chained
 % reasoning, and complex knowledge structures.

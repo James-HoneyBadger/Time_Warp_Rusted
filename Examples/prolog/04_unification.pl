@@ -1,6 +1,6 @@
 % =============================================
 % Prolog Example 04 — Unification
-% Time Warp Studio
+% Time Warp Rusted
 % =============================================
 % Unification is at the heart of Prolog.
 % When a query is made, Prolog tries to

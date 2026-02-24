@@ -5,7 +5,7 @@ REM ============================================
 
 10 REM Welcome to BASIC!
 20 PRINT "================================"
-30 PRINT "  Welcome to Time Warp Studio!"
+30 PRINT "  Welcome to Time Warp Rusted!"
 40 PRINT "================================"
 50 PRINT
 60 PRINT "Hello, World!"

@@ -1,6 +1,6 @@
 % =============================================
 % Prolog Example 01 — Hello World & Basic Facts
-% Time Warp Studio
+% Time Warp Rusted
 % =============================================
 % Prolog programs consist of facts, rules,
 % and queries. Facts state what is true.

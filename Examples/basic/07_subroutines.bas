@@ -14,7 +14,7 @@ REM ============================================
 
 80 REM SUB with parameters
 90 PRINT "--- Named SUB ---"
-100 CALL PrintBanner("Time Warp Studio", 30)
+100 CALL PrintBanner("Time Warp Rusted", 30)
 110 PRINT
 
 120 REM FUNCTION with return value

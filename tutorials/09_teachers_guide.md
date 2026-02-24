@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide helps teachers use Time Warp Studio to deliver computing lessons.
+This guide helps teachers use Time Warp Rusted to deliver computing lessons.
 It covers lesson planning, age-appropriate language choices, cross-language
 activities, assessment strategies, and curriculum alignment.
 
@@ -84,7 +84,7 @@ Resources:
 Discuss: What is a program? Where do we encounter programs in daily life?
 
 **Main Activity (25 min):**
-1. Open Time Warp Studio, select BASIC
+1. Open Time Warp Rusted, select BASIC
 2. Type: `PRINT "Hello, World!"` — Run it
 3. Add more PRINT statements with their name, age, school
 4. Introduce variables: `name$ = "Alice"` and `PRINT name$`

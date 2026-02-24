@@ -1,4 +1,4 @@
-//! Theme system for the Time Warp Studio IDE.
+//! Theme system for the Time Warp Rusted IDE.
 //!
 //! 20 built-in themes organised into categories: Retro, Dark, and Light.
 

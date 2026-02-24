@@ -108,7 +108,7 @@ PRINT "============================================"
 PRINT "       STRING FUNCTIONS"
 PRINT "============================================"
 
-WORD$ = "Time Warp Studio"
+WORD$ = "Time Warp Rusted"
 PRINT "Original:  "; WORD$
 PRINT "Length:    "; LEN(WORD$)
 PRINT "Left 4:   "; LEFT$(WORD$, 4)

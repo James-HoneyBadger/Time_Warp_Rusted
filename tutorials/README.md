@@ -1,8 +1,8 @@
-# Time Warp Studio — Tutorials & Lesson Plans
+# Time Warp Rusted — Tutorials & Lesson Plans
 
-Welcome to the Time Warp Studio tutorial collection! These guides are designed
+Welcome to the Time Warp Rusted tutorial collection! These guides are designed
 for **students** learning to program and **teachers** delivering computing
-lessons. Every tutorial targets the Time Warp Studio environment and the
+lessons. Every tutorial targets the Time Warp Rusted environment and the
 seven retro languages it supports.
 
 ---
@@ -25,7 +25,7 @@ seven retro languages it supports.
 
 ## How to Use These Tutorials
 
-1. **Open Time Warp Studio** and select the language you want to learn.
+1. **Open Time Warp Rusted** and select the language you want to learn.
 2. **Follow each lesson in order** — they build on each other.
 3. **Type the code yourself** rather than copying and pasting. Typing helps
    you learn syntax and spot errors.

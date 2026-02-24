@@ -44,7 +44,7 @@ int gcd(int a, int b) {
 
 int main() {
     printf("========================================\n");
-    printf("    Time Warp Studio - C Showcase\n");
+    printf("    Time Warp Rusted - C Showcase\n");
     printf("========================================\n\n");
 
     /* --- Variables & Types --- */

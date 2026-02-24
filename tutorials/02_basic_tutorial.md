@@ -248,7 +248,7 @@ PRINT "9 squared = "; Square(9)
 BASIC has powerful string handling:
 
 ```basic
-word$ = "Time Warp Studio"
+word$ = "Time Warp Rusted"
 PRINT "String:    "; word$
 PRINT "Length:    "; LEN(word$)
 PRINT "Left 4:   "; LEFT$(word$, 4)

@@ -9,7 +9,7 @@ var
   name: string;
 const
   BANNER_WIDTH = 40;
-  VERSION = 'Time Warp Studio';
+  VERSION = 'Time Warp Rusted';
 
 procedure DrawLine(ch: string; width: Integer);
 var

@@ -1,6 +1,6 @@
 % =============================================
 % Prolog Example 05 — Recursive Rules
-% Time Warp Studio
+% Time Warp Rusted
 % =============================================
 % Prolog rules can be recursive — a rule
 % can refer to itself. This is how Prolog

@@ -1,6 +1,6 @@
 R: =============================================
 R: PILOT Example 09 — String Interpolation
-R: Time Warp Studio
+R: Time Warp Rusted
 R: =============================================
 R: Classic mode uses #VAR in T: output.
 R: Verbose mode uses $VAR in PRINT and

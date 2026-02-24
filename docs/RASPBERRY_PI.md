@@ -1,6 +1,6 @@
 # Raspberry Pi & IoT Guide
 
-Time Warp Studio includes built-in GPIO simulation and serial
+Time Warp Rusted includes built-in GPIO simulation and serial
 communication for Raspberry Pi boards. Write hardware control programs in
 any supported language, test them with the software simulator, then deploy
 to real hardware.

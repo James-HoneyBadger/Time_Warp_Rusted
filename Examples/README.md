@@ -1,6 +1,6 @@
-# Time Warp Studio — Example Programs
+# Time Warp Rusted — Example Programs
 
-Welcome to the **Time Warp Studio** example collection! These programs demonstrate
+Welcome to the **Time Warp Rusted** example collection! These programs demonstrate
 every feature of each supported language — from simple "Hello World" to advanced
 turtle graphics, IoT control, and algorithmic showcases.
 
@@ -20,7 +20,7 @@ turtle graphics, IoT control, and algorithmic showcases.
 
 ## How to Run
 
-1. Open **Time Warp Studio**
+1. Open **Time Warp Rusted**
 2. Select a language from the toolbar
 3. Paste or load an example program into the editor
 4. Click **▶ Run**
@@ -36,4 +36,4 @@ Each language folder is numbered from beginner to advanced:
 ## See Also
 
 - `tutorials/` — Structured lesson plans for students and teachers
-- `docs/USER_GUIDE.md` — Full Time Warp Studio documentation
+- `docs/USER_GUIDE.md` — Full Time Warp Rusted documentation

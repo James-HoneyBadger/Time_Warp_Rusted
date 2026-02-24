@@ -1,4 +1,4 @@
-# Contributing to Time Warp Studio
+# Contributing to Time Warp Rusted
 
 *Release: v1.0.0 (February 2026)*
 

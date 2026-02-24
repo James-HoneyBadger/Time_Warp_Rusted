@@ -6,7 +6,7 @@
 program HelloWorld;
 begin
   writeln('================================');
-  writeln('  Welcome to Time Warp Studio!');
+  writeln('  Welcome to Time Warp Rusted!');
   writeln('================================');
   writeln;
   writeln('Hello, World!');

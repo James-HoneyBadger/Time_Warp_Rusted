@@ -1,6 +1,6 @@
 # Examples Guide
 
-Time Warp Studio ships with **74+ example programs** across seven languages
+Time Warp Rusted ships with **74+ example programs** across seven languages
 and nine directories. Examples progress from simple "Hello World" to
 complete showcases demonstrating every language feature.
 
@@ -39,7 +39,7 @@ Examples/
 
 ### Auto-detection
 
-When you open a file, Time Warp Studio automatically detects the language
+When you open a file, Time Warp Rusted automatically detects the language
 from the file extension and switches the interpreter.
 
 ---

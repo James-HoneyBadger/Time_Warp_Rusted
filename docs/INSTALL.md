@@ -1,6 +1,6 @@
 # Installation Guide
 
-Complete instructions for building and running Time Warp Studio on every
+Complete instructions for building and running Time Warp Rusted on every
 supported platform.
 
 ---
@@ -15,7 +15,7 @@ supported platform.
 
 ### Platform-Specific Libraries
 
-Time Warp Studio uses **egui / eframe** with OpenGL (glow) rendering.
+Time Warp Rusted uses **egui / eframe** with OpenGL (glow) rendering.
 Some platforms require extra system libraries:
 
 #### Linux — Ubuntu / Debian
@@ -107,7 +107,7 @@ cargo test --package tw_core --test language_tests -- pascal_
 
 ## Workspace Structure
 
-Time Warp Studio is organized as a Cargo workspace with six crates:
+Time Warp Rusted is organized as a Cargo workspace with six crates:
 
 ```
 Cargo.toml                     ← workspace root + binary entry point
@@ -151,7 +151,7 @@ configured in `src/main.rs`:
 
 ### Logging
 
-Time Warp Studio uses `env_logger`. Enable debug logging with:
+Time Warp Rusted uses `env_logger`. Enable debug logging with:
 
 ```bash
 RUST_LOG=debug cargo run

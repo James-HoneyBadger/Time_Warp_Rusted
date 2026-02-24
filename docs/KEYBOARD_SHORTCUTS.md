@@ -1,6 +1,6 @@
 # Keyboard Shortcuts Reference
 
-Complete list of keyboard shortcuts in Time Warp Studio.
+Complete list of keyboard shortcuts in Time Warp Rusted.
 
 ---
 

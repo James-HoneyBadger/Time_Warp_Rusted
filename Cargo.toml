@@ -28,7 +28,7 @@ env_logger = "0.11"
 name    = "time-warp-studio"
 version = "1.0.0"
 edition = "2021"
-authors = ["Time Warp Studio Contributors"]
+authors = ["Time Warp Rusted Contributors"]
 description = "Educational multi-language programming environment — Rust edition"
 license = "MIT"
 

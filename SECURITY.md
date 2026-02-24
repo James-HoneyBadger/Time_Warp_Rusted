@@ -2,7 +2,7 @@
 
 ## Security Model
 
-Time Warp Studio is a native desktop application.  **It does not expose any network services**, does not communicate over the network, and does not execute code outside its own process.
+Time Warp Rusted is a native desktop application.  **It does not expose any network services**, does not communicate over the network, and does not execute code outside its own process.
 
 The language executors (BASIC, PILOT, Logo, C, Pascal, Prolog, Forth) are **interpreters written in safe Rust** — they operate on their own `ExecContext` state and cannot access the filesystem, spawn processes, or make system calls.  There is no `unsafe` code in any executor.
 

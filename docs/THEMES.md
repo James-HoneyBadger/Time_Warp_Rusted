@@ -1,6 +1,6 @@
 # Themes & Appearance Guide
 
-Time Warp Studio ships with **20 built-in themes** across three categories,
+Time Warp Rusted ships with **20 built-in themes** across three categories,
 plus configurable font families and sizes. Customize your workspace from the
 **Appearance** menu or the **Themes** panel in the left sidebar.
 
