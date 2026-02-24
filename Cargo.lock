@@ -2526,7 +2526,7 @@ dependencies = [
 
 [[package]]
 name = "time-warp-studio"
-version = "7.0.0"
+version = "1.0.0"
 dependencies = [
  "eframe",
  "egui",
@@ -2600,7 +2600,7 @@ checksum = "d2df906b07856748fa3f6e0ad0cbaa047052d4a7dd609e231c4f72cee8c36f31"
 
 [[package]]
 name = "tw_core"
-version = "7.0.0"
+version = "1.0.0"
 dependencies = [
  "log",
  "serde",
@@ -2611,14 +2611,14 @@ dependencies = [
 
 [[package]]
 name = "tw_graphics"
-version = "7.0.0"
+version = "1.0.0"
 dependencies = [
  "serde",
 ]
 
 [[package]]
 name = "tw_iot"
-version = "7.0.0"
+version = "1.0.0"
 dependencies = [
  "log",
  "rppal",
@@ -2627,7 +2627,7 @@ dependencies = [
 
 [[package]]
 name = "tw_languages"
-version = "7.0.0"
+version = "1.0.0"
 dependencies = [
  "log",
  "serde",
@@ -2636,7 +2636,7 @@ dependencies = [
 
 [[package]]
 name = "tw_ui"
-version = "7.0.0"
+version = "1.0.0"
 dependencies = [
  "eframe",
  "egui",
