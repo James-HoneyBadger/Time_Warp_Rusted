@@ -1,10 +1,10 @@
-# ⏱ Time Warp Studio
+# ⏱ Time Warp Rusted
 
-> **🎉 v1.0.0 Released** — First stable release of Time Warp Studio! [View Release Notes](https://github.com/James-HoneyBadger/Time_Warp_Rusted/releases/tag/v1.0.0)
+> **🎉 v1.0.0 Released** — First stable release of Time Warp Rusted! [View Release Notes](https://github.com/James-HoneyBadger/Time_Warp_Rusted/releases/tag/v1.0.0)
 
 **An educational multi-language programming environment built in Rust.**
 
-Time Warp Studio is a retro-inspired IDE that lets you write, run, and debug
+Time Warp Rusted is a retro-inspired IDE that lets you write, run, and debug
 programs in seven classic programming languages — all with built-in turtle
 graphics, a step-through debugger, and Raspberry Pi GPIO support.
 
