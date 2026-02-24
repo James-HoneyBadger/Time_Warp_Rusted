@@ -1,87 +1,196 @@
-# Debugger Guide
+# Debugging Guide
 
-Time Warp Studio includes a **time-travel debugger** that records every execution step and lets you scrub backwards and forwards through the history.
-
----
-
-## Enabling Debug Mode
-
-Check the **Debug** checkbox in the toolbar before pressing **▶ Run**.
-
-When debug mode is active, the interpreter records an `ExecutionFrame` at each statement:
-
-- Current line number and source text
-- Snapshot of all numeric variables, string variables, and arrays
-- Accumulated output up to that point
+How to debug programs and troubleshoot issues in Time Warp Studio.
 
 ---
 
-## Debugger Panel
+## Built-in Debugging Tools
 
-The debugger panel appears in the left sidebar below the feature tabs.
+### Step Execution
 
+Press **F7** to execute your program one statement at a time. Each press
+advances by a single line or instruction. The current line is highlighted
+in the editor.
+
+### Run / Stop
+
+| Action | Shortcut | Description |
+|--------|----------|-------------|
+| **Run** | F5 | Execute the entire program |
+| **Stop** | F6 | Halt execution immediately |
+| **Step** | F7 | Execute one statement |
+
+### Output Panel
+
+The output panel has three tabs:
+
+| Tab | Shows |
+|-----|-------|
+| **Output** | Program `PRINT`/`printf`/`WriteLn` output |
+| **Errors** | Compile and runtime error messages |
+| **Console** | Interpreter diagnostics and debug info |
+
+Switch between tabs or check **Errors** first when a program misbehaves.
+
+### Debug Mode
+
+Enable debug mode from **View → Debug Panel**. This shows:
+
+- Current interpreter state (`Idle`, `Running`, `WaitingInput`,
+  `Finished`, `Error`)
+- Current line number and statement being executed
+- Variable values (when available)
+- Execution timeline position
+
+---
+
+## Common Errors by Language
+
+### BASIC
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| "Undefined variable" | Using a variable before assigning it | Add `LET X = 0` before use |
+| "NEXT without FOR" | Mismatched loop | Check FOR/NEXT pairing |
+| "Type mismatch" | String where number expected | Check `$` suffix on variables |
+| "RETURN without GOSUB" | Stray RETURN | Ensure GOSUB precedes RETURN |
+| "END IF without IF" | Unmatched block | Check IF/END IF pairing |
+
+### Logo
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| "Unknown command" | Typo in command name | Check spelling: `FD`, `RT`, etc. |
+| "Not enough inputs" | Missing argument | Provide required parameter |
+| "Undefined procedure" | Calling before defining | Define with `TO`/`END` first |
+| "Too many inputs" | Extra arguments | Check command syntax |
+
+### C
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| "Undefined function" | Calling unknown function | Define function before calling |
+| "Type error" | Wrong argument type | Check printf format specifiers |
+| "Missing semicolon" | Forgotten `;` | Add semicolons after statements |
+| "Unmatched brace" | Missing `{` or `}` | Check brace pairs |
+
+### Pascal
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| "Undeclared identifier" | Missing `var` declaration | Declare in `var` section |
+| "Type mismatch" | Incompatible assignment | Check types match |
+| "Expected semicolon" | Missing `;` | Add between statements |
+| "Expected period" | Missing final `.` | Add `.` after final `end` |
+
+### Forth
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| "Stack underflow" | Popping from empty stack | Ensure enough values pushed |
+| "Unknown word" | Typo or undefined word | Check spelling, define with `:` |
+| "Division by zero" | Dividing by 0 | Check divisor before `/` |
+
+### PILOT
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| "Unknown command" | Invalid command letter | Use T:, A:, M:, etc. |
+| "Label not found" | Jump to undefined label | Define `*LABEL` in code |
+| "Missing colon" | Command without `:` | Format as `T:text` |
+
+### Prolog
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| "Syntax error" | Missing period | End every clause with `.` |
+| "Undefined predicate" | Missing fact or rule | Define before querying |
+| "Max recursion depth" | Infinite recursion | Add base case to rules |
+
+---
+
+## Debugging Strategies
+
+### 1. Read the Error Message
+
+Error messages appear in the **Errors** tab of the output panel. They
+usually include:
+- The line number where the error occurred
+- A description of what went wrong
+- Sometimes a suggestion for fixing it
+
+### 2. Use Step Execution
+
+Press **F7** repeatedly to walk through your program line by line. Watch
+the output and variable states change. This is the most effective way to
+find logic bugs.
+
+### 3. Add Print Statements
+
+Insert `PRINT` (or equivalent) statements to show variable values at key
+points:
+
+```basic
+PRINT "DEBUG: X = "; X
+PRINT "DEBUG: entering loop"
 ```
-⏱ Debugger
-────────────────────────
-Step: [────●──────] 42 / 150
-[⏮] [⏪] [⏩] [⏭]
-────────────────────────
-Line 30: FOR I = 1 TO 10
-────────────────────────
-Variables
-I     │ 3
-TOTAL │ 6
-NAME$ │ "Alice"
-ARR[] │ [1, 2, 4, 8, …]
-────────────────────────
-Breakpoints
-🔴 Line 50   [✕]
-🔴 Line 80   [✕]
-```
 
-### Navigation
+Remove or comment them out once the bug is found.
 
-| Button | Action |
-|--------|--------|
-| ⏮ | Jump to step 0 |
-| ⏪ | Step backward |
-| ⏩ | Step forward |
-| ⏭ | Jump to last step |
-| Slider | Scrub to any step |
+### 4. Simplify the Problem
 
-### Variable Inspector
+If a large program has a bug:
+1. Comment out sections until the bug disappears
+2. The last section you commented out contains the bug
+3. Focus debugging on that section
 
-The variable table shows the state **at the selected step**, not the current live state.  There are three types of entries:
+### 5. Check Common Pitfalls
 
-| Display | Type |
-|---------|------|
-| `I = 3` | Numeric variable |
-| `NAME$ = "Alice"` | String variable |
-| `ARR[] = [1, 2, …]` | Array (first 8 elements shown) |
+- **Off-by-one errors**: `FOR I = 1 TO 10` vs `FOR I = 0 TO 9`
+- **Missing initialization**: Variables default to 0 but may need
+  specific starting values
+- **Infinite loops**: Always ensure loop conditions will eventually
+  become false
+- **Case sensitivity**: BASIC and Logo are case-insensitive; C and
+  Pascal are case-sensitive for identifiers
 
 ---
 
-## Single Stepping
+## GPIO Debugging
 
-Press **F7** (or **⏭ Step** in the toolbar) to execute exactly one statement at a time.  The debug checkbox does not need to be enabled for single-stepping; the debugger panel will show variables if it is.
+When working with GPIO code:
 
----
-
-## Breakpoints
-
-Breakpoints are set programmatically via `ExecutionTimeline::toggle_breakpoint(line_number)`.  When the interpreter reaches a breakpointed line it pauses (entering `WaitingInput` state) after completing the previous batch.  Resume by pressing **▶ Run** again.
-
-To remove a breakpoint click the **✕** button next to it in the panel.
+1. **Use the Simulator first** — verify logic before connecting hardware
+2. **Check the IoT panel log** — every GPIO operation is recorded
+3. **Verify pin modes** — always call `PINMODE` before read/write
+4. **Check pin numbers** — valid range depends on your board model
+5. **Watch for timing** — use `SLEEP`/`WAIT` between rapid pin changes
 
 ---
 
-## Performance Note
+## Performance Issues
 
-Recording every frame has a cost proportional to the number of variables.  For programs with very tight inner loops, disable debug mode and use single-stepping or strategic breakpoints instead.
+### Program runs slowly
+
+- The interpreter executes 200 statements per UI frame — this is normal
+  for long-running programs
+- Tight loops with no output may appear frozen but are still running
+- Complex turtle graphics with thousands of segments may slow canvas
+  rendering
+
+### UI is laggy
+
+- Close the debug panel if not needed
+- Reduce font size for faster text rendering
+- Stop any running program (F6) before making edits
 
 ---
 
-## Limitations
+## Getting Help
 
-- The timeline is held in memory; very long programs (>100 000 steps) will stop recording due to the `max_iterations` limit in `ExecContext`.
-- Variable snapshots do not include Prolog databases or the Forth dictionary (those are shown as-is in the live inspector but are not time-travelled).
+If you are stuck:
+
+1. Check the [FAQ](FAQ.md) for common questions
+2. Review the [Language Reference](LANGUAGE_GUIDE.md) for correct syntax
+3. Look at similar [example programs](EXAMPLES.md) for working patterns
+4. Open an issue on GitHub with a minimal reproducing example

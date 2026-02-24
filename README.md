@@ -1,118 +1,141 @@
-# Time Warp Studio
+# ⏱ Time Warp Studio
 
-**Educational Multi-Language Programming Environment — Rust Edition**
+**An educational multi-language programming environment built in Rust.**
 
-[![Rust](https://img.shields.io/badge/Rust-1.80%2B-orange)](https://www.rust-lang.org/)
-[![egui 0.31](https://img.shields.io/badge/egui-0.31-blue)](https://github.com/emilk/egui)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-7.0.0-green)](#)
+Time Warp Studio is a retro-inspired IDE that lets you write, run, and debug
+programs in seven classic programming languages — all with built-in turtle
+graphics, a step-through debugger, and Raspberry Pi GPIO support.
 
-Time Warp Studio is a native desktop IDE for learning programming across **7 classic languages** — BASIC, PILOT, Logo, C, Pascal, Prolog, and Forth — in a single unified environment. It features an integrated code editor, turtle graphics canvas, step-through debugger with timeline replay, and built-in lessons.
-
-Built entirely in Rust using [egui](https://github.com/emilk/egui) / [eframe](https://github.com/emilk/egui/tree/master/crates/eframe).
-
----
-
-## Features
-
-- **7 language executors** running directly in-process — no compiler or runtime required
-- **Turtle graphics** canvas with zoom, pan, and OpenGL rendering
-- **Step debugger** with variable inspector and timeline scrubbing
-- **8 built-in themes** — Dracula, Monokai, VS Code Dark, Solarized Dark, Ocean Blue, Spring, Sunset, Candy
-- **Examples browser** with 30+ ready-to-run programs
-- **Lessons panel** for each language
-- Immediate-mode UI — zero widget toolkit dependencies beyond egui
+![Version](https://img.shields.io/badge/version-7.0.0-blue)
+![Rust](https://img.shields.io/badge/rust-1.80%2B-orange)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Languages](https://img.shields.io/badge/languages-7-purple)
+![Themes](https://img.shields.io/badge/themes-20-teal)
 
 ---
 
-## Quick Start
+## ✨ Features
+
+| Feature | Description |
+|---------|-------------|
+| **7 Language Executors** | BASIC, Logo, C, Pascal, Forth, PILOT, Prolog |
+| **Turtle Graphics** | Full 2D drawing canvas with zoom, pan, colors, fills |
+| **Step Debugger** | Time-travel debugger with execution timeline and variable inspector |
+| **20 Themes** | 6 retro + 10 dark + 4 light — with color-swatch previews |
+| **Tabbed Interface** | Code Editor, Text Output, and Graphics Canvas on separate tabs |
+| **74+ Example Programs** | Tutorials, demos, and showcases for every language |
+| **Raspberry Pi GPIO** | Simulate and control real GPIO pins on Pico, Zero, Pi 4/5 |
+| **Code Editor** | Syntax highlighting, find/replace, undo/redo, line numbers, 7 fonts |
+
+## 🖥 Supported Languages
+
+| Language | Extension | Example |
+|----------|-----------|---------|
+| **Turbo BASIC** | `.bas` | `PRINT "Hello, World!"` |
+| **Logo** | `.logo` | `REPEAT 4 [FD 100 RT 90]` |
+| **C (subset)** | `.c` | `printf("Hello!\n");` |
+| **Pascal** | `.pas` | `WriteLn('Hello!');` |
+| **Forth** | `.f` | `." Hello!" CR` |
+| **PILOT** | `.pilot` | `T:Hello, World!` |
+| **Prolog** | `.pl` | `?- write('Hello!'), nl.` |
+
+## 🚀 Quick Start
 
 ```bash
-# Debug build (~5 s, ~156 MB)
+# Clone
+git clone https://github.com/James-HoneyBadger/Time_Warp_Rusted.git
+cd Time_Warp_Rusted
+
+# Run (debug build)
 cargo run
 
-# Release build (~60 s, ~10 MB stripped)
+# Or build optimized release
 cargo build --release
 ./target/release/time-warp-studio
 ```
 
-**Minimum Rust:** 1.80 (stable).  No other system dependencies required on Fedora/RHEL.
+### System Requirements
 
-On Debian/Ubuntu you may need:
+- **Rust** 1.80 or newer
+- **Linux** (Ubuntu/Debian): `sudo apt install libxkbcommon-dev libwayland-dev libgl1-mesa-dev`
+- **Fedora**: `sudo dnf install libxkbcommon-devel wayland-devel mesa-libGL-devel`
+- **macOS / Windows**: No extra dependencies
 
-```bash
-sudo apt install libxkbcommon-dev libwayland-dev libgl1-mesa-dev
+## 📚 Documentation
+
+| Document | Description |
+|----------|-------------|
+| [Installation Guide](docs/INSTALL.md) | Setup, building, platform notes |
+| [User Guide](docs/USER_GUIDE.md) | Complete IDE walkthrough |
+| [Language Reference](docs/LANGUAGE_GUIDE.md) | Syntax and commands for all 7 languages |
+| [Turtle Graphics](docs/TURTLE_GRAPHICS.md) | Drawing commands, coordinates, colors |
+| [Keyboard Shortcuts](docs/KEYBOARD_SHORTCUTS.md) | Every shortcut at a glance |
+| [Themes & Appearance](docs/THEMES.md) | All 20 themes, fonts, customization |
+| [Debugging Guide](docs/DEBUGGING.md) | Step debugger, timeline, breakpoints |
+| [Raspberry Pi & IoT](docs/RASPBERRY_PI.md) | GPIO, boards, wiring, projects |
+| [Examples Guide](docs/EXAMPLES.md) | Walkthrough of all 74+ example programs |
+| [Architecture](ARCHITECTURE.md) | Codebase structure and design |
+| [FAQ & Troubleshooting](docs/FAQ.md) | Common questions and solutions |
+| [Contributing](CONTRIBUTING.md) | How to add languages, themes, and features |
+
+## 🎨 Themes
+
+**20 built-in themes** in three categories:
+
+| 🕹 Retro | 🌙 Dark | ☀ Light |
+|----------|---------|---------|
+| Amber Terminal | Dracula | Spring |
+| Green Screen | Monokai | Candy |
+| Commodore 64 | VS Code Dark | Solarized Light |
+| Borland Turbo | Solarized Dark | GitHub Light |
+| CGA | Ocean Blue | |
+| Apple ][ | Sunset | |
+| | Nord | |
+| | Gruvbox Dark | |
+| | Tokyo Night | |
+| | One Dark | |
+
+Select themes from the **Appearance** menu with live color-swatch previews.
+
+## ⌨ Key Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `F5` / `Ctrl+R` | Run program |
+| `F6` | Stop |
+| `F7` | Step (single line) |
+| `Ctrl+1` / `2` / `3` | Switch to Editor / Output / Canvas |
+| `Ctrl+=` / `Ctrl+-` | Zoom in / out |
+| `Ctrl+N` / `O` / `S` | New / Open / Save |
+| `Ctrl+Z` / `Shift+Z` | Undo / Redo |
+| `Ctrl+F` / `H` | Find / Find & Replace |
+| `Ctrl+G` | Go to line |
+| `Ctrl+L` | Clear output |
+
+## 🏗 Project Structure
+
+```
+Time_Warp_Rusted/
+├── src/main.rs              # Application entry point
+├── crates/
+│   ├── tw_graphics/         # TurtleState, shapes, colors
+│   ├── tw_languages/        # Language executors + evaluator
+│   ├── tw_core/             # Interpreter, timeline, Language enum
+│   ├── tw_ui/               # egui IDE (editor, canvas, panels, themes)
+│   └── tw_iot/              # GPIO, boards, serial
+├── docs/                    # Full documentation suite
+├── Examples/                # 74+ example programs
+│   ├── basic/  logo/  c/  pascal/  forth/  pilot/  prolog/
+│   ├── demo/                # Showcase per language
+│   └── projects/            # 31 Raspberry Pi GPIO projects
+└── Cargo.toml               # Workspace root
 ```
 
----
+## 📄 License
 
-## Building
+[MIT](LICENSE)
 
-```bash
-git clone https://github.com/James-HoneyBadger/Time_Warp_Studio
-cd Time_Warp_Studio
-cargo build --release
-```
+## 🤝 Contributing
 
----
-
-## Workspace Layout
-
-```
-Cargo.toml                  workspace root + binary
-src/
-  main.rs                   entry point (eframe::run_native)
-crates/
-  tw_graphics/              TurtleState, TurtleLine, TurtleShape, colour utils
-  tw_languages/             all 7 language executors + ExecContext + expression evaluator
-  tw_core/                  Interpreter loop, Language enum, ExecutionTimeline debugger
-  tw_ui/                    egui App, editor, canvas, themes, panels
-Examples/                   .bas / .c / .logo / .pas / .pro / .fth / .pilot programs
-docs/                       documentation
-```
-
----
-
-## Languages
-
-| Language | Extension | Sample |
-|----------|-----------|--------|
-| BASIC    | `.bas`    | `PRINT "Hello"` / turtle graphics |
-| PILOT    | `.pilot`  | `T:Hello` / `A:NAME` / `M:pattern` |
-| Logo     | `.logo`   | `REPEAT 4 [FD 100 RT 90]` |
-| C        | `.c`      | `printf("Hello\n");` |
-| Pascal   | `.pas`    | `writeln('Hello');` |
-| Prolog   | `.pro`    | `?- ancestor(tom, ann).` |
-| Forth    | `.fth`    | `: SQUARE DUP * ; 5 SQUARE .` |
-
----
-
-## Keyboard Shortcuts
-
-| Key | Action |
-|-----|--------|
-| F5 | Run program |
-| F6 | Stop |
-| F7 | Step (one statement) |
-| Ctrl+L | Clear output |
-| Ctrl+= | Zoom in editor |
-| Ctrl+- | Zoom out editor |
-
----
-
-## Documentation
-
-- [Architecture](ARCHITECTURE.md)
-- [User Guide](docs/USER_GUIDE.md)
-- [Language Guide](docs/LANGUAGE_GUIDE.md)
-- [Turtle Graphics](docs/TURTLE_GRAPHICS.md)
-- [Debugger](docs/DEBUGGING.md)
-- [FAQ](docs/FAQ.md)
-- [Contributing](CONTRIBUTING.md)
-- [Security](SECURITY.md)
-
----
-
-## License
-
-MIT — see [LICENSE](LICENSE).
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on adding languages,
+themes, examples, and features. All contributions welcome!
