@@ -13,10 +13,10 @@ use tw_core::{interpreter::{Interpreter, RunState}, language::Language};
 use crate::{
     canvas::TurtleCanvas,
     debug_panel::DebugPanel,
-    editor::CodeEditor,
+    editor::{CodeEditor, FONT_FAMILIES},
     feature_panels::{FeaturePanels, Panel},
     output_panel::OutputPanel,
-    themes::ThemeManager,
+    themes::{ThemeManager, FONT_SIZE_PRESETS},
 };
 
 // ── central tab ───────────────────────────────────────────────────────────────
@@ -651,19 +651,71 @@ impl TimeWarpApp {
                             ui.close_menu();
                         }
                     }
-                    ui.separator();
-                    ui.label("Theme:");
-                    for name in self.themes.theme_names()
-                        .into_iter()
-                        .map(|s| s.to_string())
-                        .collect::<Vec<_>>()
-                    {
-                        let sel = self.themes.current == name;
-                        if ui.selectable_label(sel, &name).clicked() {
-                            self.themes.set_theme(&name);
-                            ui.close_menu();
+                });
+
+                // ── Appearance ───────────────────────────────────────────
+                ui.menu_button("Appearance", |ui| {
+                    // ── Theme selector with categories and swatches ──
+                    ui.label(RichText::new("🎨 Theme").strong());
+
+                    // Collect into owned data so we don't hold an immutable
+                    // borrow on `self.themes` when calling set_theme later.
+                    let groups: Vec<(String, Vec<(String, String, [u8;3], [u8;3], [u8;3])>)> =
+                        self.themes.themes_by_category().into_iter().map(|(cat, ts)| {
+                            let items = ts.into_iter().map(|t| {
+                                (t.name.clone(), t.description.clone(),
+                                 t.background, t.accent, t.keyword)
+                            }).collect();
+                            (cat.label().to_string(), items)
+                        }).collect();
+
+                    for (cat_label, themes) in &groups {
+                        ui.separator();
+                        ui.label(RichText::new(cat_label).strong().small());
+                        for (name, desc, bg_c, accent_c, kw_c) in themes {
+                            let sel = self.themes.current == *name;
+                            ui.horizontal(|ui| {
+                                // Color swatch (bg, accent, keyword)
+                                let swatch_size = egui::vec2(12.0, 12.0);
+                                let (r, _) = ui.allocate_exact_size(swatch_size, egui::Sense::hover());
+                                ui.painter().rect_filled(r, 2.0,
+                                    egui::Color32::from_rgb(bg_c[0], bg_c[1], bg_c[2]));
+                                let (r, _) = ui.allocate_exact_size(swatch_size, egui::Sense::hover());
+                                ui.painter().rect_filled(r, 2.0,
+                                    egui::Color32::from_rgb(accent_c[0], accent_c[1], accent_c[2]));
+                                let (r, _) = ui.allocate_exact_size(swatch_size, egui::Sense::hover());
+                                ui.painter().rect_filled(r, 2.0,
+                                    egui::Color32::from_rgb(kw_c[0], kw_c[1], kw_c[2]));
+                                if ui.selectable_label(sel, name).on_hover_text(desc).clicked() {
+                                    self.themes.set_theme(name);
+                                    ui.close_menu();
+                                }
+                            });
                         }
                     }
+
+                    ui.separator();
+                    ui.label(RichText::new("🔤 Font Family").strong());
+                    for &fam in FONT_FAMILIES {
+                        let sel = self.editor.font_family == fam;
+                        if ui.selectable_label(sel, fam).clicked() {
+                            self.editor.font_family = fam.to_string();
+                        }
+                    }
+
+                    ui.separator();
+                    ui.label(RichText::new("🔠 Font Size").strong());
+                    for &(label, size) in FONT_SIZE_PRESETS {
+                        let sel = (self.editor.font_size - size).abs() < 0.5;
+                        if ui.selectable_label(sel, label).clicked() {
+                            self.editor.font_size = size;
+                        }
+                    }
+                    ui.horizontal(|ui| {
+                        if ui.small_button("−").clicked() { self.editor.zoom_out(); }
+                        ui.label(format!("{}pt", self.editor.font_size as u32));
+                        if ui.small_button("+").clicked() { self.editor.zoom_in(); }
+                    });
                 });
 
                 // ── Language ─────────────────────────────────────────────

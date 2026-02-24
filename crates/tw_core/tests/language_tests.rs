@@ -327,7 +327,7 @@ fn basic_pset_graphics() {
 
 #[test]
 fn basic_turtle_forward() {
-    let (x, y, _h, _pd, lines, _shapes) = run_get_turtle(Language::Basic, "FORWARD 100");
+    let (_x, y, _h, _pd, lines, _shapes) = run_get_turtle(Language::Basic, "FORWARD 100");
     // Forward heading 0 (north) should increase y
     assert!(y > 50.0, "FORWARD should move turtle up: y={y}");
     assert!(lines > 0, "FORWARD should draw a line");
